@@ -1,0 +1,94 @@
+//
+//  ConsultListController.m
+//  YYDoctor
+//
+//  Created by MaxJmac on 15/10/14.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "ConsultListController.h"
+#import <DZNEmptyDataSet/UIScrollView+EmptyDataSet.h>
+#import "ConsultListCell.h"
+#import "ChatController.h"
+
+@interface ConsultListController ()
+<UITableViewDataSource,UITableViewDelegate,DZNEmptyDataSetSource>
+
+@property (nonatomic, weak) IBOutlet UITableView *tableView;
+@property (nonatomic, weak) IBOutlet UISegmentedControl *segmentControl;
+
+@property (nonatomic, strong) NSMutableArray *dataSource;
+
+@end
+
+@implementation ConsultListController
+
+#pragma mark - 
+
+- (void)setupTestData {
+    self.dataSource = [@[@{@"headImage":@"TempHead",@"name":@"张三",@"history":@"啊哈哈哈"},
+                         @{@"headImage":@"TempHead",@"name":@"李四",@"history":@"[语音消息]"},
+                         @{@"headImage":@"TempHead",@"name":@"王五",@"history":@"[图片]"},
+                         @{@"headImage":@"TempHead",@"name":@"赵六",@"history":@"你好啊哈哈哈哈"},
+                         @{@"headImage":@"TempHead",@"name":@"朱七",@"history":@"嗯"},
+                         @{@"headImage":@"TempHead",@"name":@"陈八",@"history":@"好的"},
+                         @{@"headImage":@"TempHead",@"name":@"钱九",@"history":@"收到"},
+                         @{@"headImage":@"TempHead",@"name":@"吴十",@"history":@"别这样"},] mutableCopy];
+}
+
+#pragma mark - UITableView Delegation
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.dataSource.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    static NSString *reuseIdentifier = @"ConsultListCell";
+    ConsultListCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
+    NSDictionary *item = self.dataSource[indexPath.row];
+    NSString *imageName = item[@"headImage"];
+    cell.headImageView.image = [UIImage imageNamed:imageName];
+    cell.nameLabel.text = item[@"name"];
+    cell.historyLabel.text = item[@"history"];
+    return cell;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    ChatController *cc = [self.storyboard instantiateViewControllerWithIdentifier:NSStringFromClass([ChatController class])];
+    NSDictionary *item = self.dataSource[indexPath.row];
+    cc.title = item[@"name"];
+    [self.navigationController pushViewController:cc animated:YES];
+}
+
+#pragma mark - DZNEmptyDataSet
+
+- (UIImage *)imageForEmptyDataSet:(UIScrollView *)scrollView {
+    UIImage *image = [UIImage imageNamed:@"EmptyDataSet"];
+    return image;
+}
+
+- (NSAttributedString *)titleForEmptyDataSet:(UIScrollView *)scrollView {
+    NSDictionary *attributes = @{NSFontAttributeName:[UIFont systemFontOfSize:18.0f],
+                                 NSForegroundColorAttributeName:[UIColor blackColor]};
+    NSAttributedString *aString = [[NSAttributedString alloc] initWithString:@"暂无内容" attributes:attributes];
+    return aString;
+}
+
+- (CGFloat)verticalOffsetForEmptyDataSet:(UIScrollView *)scrollView {
+    return -100.0f;
+}
+
+#pragma mark - Lifetime
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.tableView.tableFooterView = [UIView new];
+    [self setupTestData];
+    [self.tableView reloadData];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+@end

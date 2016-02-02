@@ -1,0 +1,167 @@
+//
+//  ConsultationBillViewController.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/21.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "ConsultationBillController.h"
+#import "ConsultationBillModel.h"
+#import "ConsultationBillCell.h"
+#import <DZNEmptyDataSet/UIScrollView+EmptyDataSet.h>
+#import "YYAPIRequest.h"
+#import "HUDHelper.h"
+#import "LoginInfo.h"
+#import "PersonalAPIHelper.h"
+
+@interface ConsultationBillController ()
+<UITableViewDataSource,
+UITableViewDelegate,
+DZNEmptyDataSetDelegate,
+DZNEmptyDataSetSource>
+
+@property (weak, nonatomic) IBOutlet UIView *popView;//弹出框
+@property (weak, nonatomic) IBOutlet UIView *maskView;//覆盖view
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (weak, nonatomic) IBOutlet UILabel *totalCost;//总额
+@property (nonatomic, assign) BOOL popViewselected;
+@property (nonatomic, strong) NSMutableArray *dataSource;
+@property (nonatomic, assign) NSInteger totalCount;
+
+@end
+
+@implementation ConsultationBillController
+
+#pragma mark - IBAction
+//右导航按钮弹出框
+- (IBAction)rightBarbuttonItemClick:(id)sender {
+    if (!self.popViewselected) {
+        self.popView.hidden  = NO;
+        self.maskView.hidden = NO;
+        self.popViewselected = YES;
+    }else {
+        self.popView.hidden  = YES;
+        self.maskView.hidden = YES;
+        self.popViewselected = NO;
+    }
+}
+
+//右上角弹出框里按钮点击事件
+- (IBAction)consultationBillType:(UIButton *)sender {
+    NSInteger index = sender.tag;
+    [self requestData:index];
+    
+    self.popView.hidden = YES;
+    self.maskView.hidden = YES;
+    self.popViewselected = NO;
+}
+
+#pragma mark - Request 
+
+- (void)requestData:(NSInteger)index {
+    if (!self.dataSource) {
+        self.dataSource = [[NSMutableArray alloc] init];
+    }
+    [self.dataSource removeAllObjects];
+    [self requestConsultationBill:index];
+    [self requestConsultaitionTotalCost:index];
+}
+//根据tpye值图文咨询账单数据请求
+- (void)requestConsultationBill:(NSInteger)index {
+    LoginInfo *loginInfo = [LoginInfo currentLoginInfo];
+    [PersonalAPIHelper requestConsultationBill:loginInfo.doctorInfo.doctorId type:@(index) completion:^(id response, NSError *error) {
+        for (NSDictionary *dict in response) {
+            ConsultationBillModel *cbmodel = [[ConsultationBillModel alloc] initWithDictionary:dict];
+            [self.dataSource addObject:cbmodel];
+        }
+        [self.tableView reloadData];
+    }];
+}
+
+// 根据type值咨询费用数据请求
+- (void)requestConsultaitionTotalCost:(NSInteger)index {
+    LoginInfo *loginInfo = [LoginInfo currentLoginInfo];
+    [PersonalAPIHelper requestBillCost:loginInfo.doctorInfo.doctorId type:@(index) completion:^(id response, NSError *error) {
+        NSDictionary *result = response[0];
+        if (![result isEqual:[NSNull null]]) {
+            self.totalCost.text = [NSString stringWithFormat:@"总额:%@元",result[@"totalCost"]];
+        }else {
+            self.totalCost.text = @"总额:0元";
+        }
+    }];
+}
+
+#pragma mark - Lifetime
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    self.popView.hidden = YES;
+    self.maskView.hidden = YES;
+    self.popViewselected = NO;
+    [self requestData:0];
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // 点击view手势
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(hideView:)];
+    [self.maskView addGestureRecognizer:tap];
+    self.tableView.tableFooterView = [UIView new];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+- (void)hideView:(UITapGestureRecognizer *)gestureRescognizer {
+    self.popView.hidden  = YES;
+    self.maskView.hidden = YES;
+    self.popViewselected = NO;
+}
+
+#pragma mark - DZNEmptydata
+
+- (UIImage *)imageForEmptyDataSet:(UIScrollView *)scrollView {
+    UIImage *image = [UIImage imageNamed:@"EmptyDataSet"];
+    return image;
+}
+
+- (NSAttributedString *)titleForEmptyDataSet:(UIScrollView *)scrollView {
+    NSDictionary *attribute = @{NSFontAttributeName:[UIFont systemFontOfSize:18],NSForegroundColorAttributeName:[UIColor blackColor]};
+    NSAttributedString *titleString = [[NSAttributedString alloc]initWithString:@"暂无内容" attributes:attribute];
+    return titleString;
+}
+
+#pragma mark - tableViewDelegate
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.dataSource.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    static NSString *cellID = @"ConsultationBillCell";
+    ConsultationBillCell *cell = [tableView dequeueReusableCellWithIdentifier:cellID];
+    [self configCell:cell indexPath:indexPath];
+    return cell;
+}
+
+- (void)configCell:(UITableViewCell *)cell indexPath:(NSIndexPath *)indexPath {
+    ConsultationBillModel *model = self.dataSource[indexPath.row];
+    ConsultationBillCell *billCell = (ConsultationBillCell *)cell;
+    billCell.nameLabel.text = model.userName;
+    NSString *orderDate = [model.orderDate substringToIndex:10];
+    billCell.singleTimeLabel.text = [NSString stringWithFormat:@"下单时间：%@",orderDate];
+    billCell.feeLabel.text = [NSString stringWithFormat:@"%@元",model.currCost];
+    NSInteger type = [model.advType integerValue];
+    if (type == 1) {
+        billCell.consultationTypeLabel.text = @"图文咨询";
+    }else if (type == 2) {
+        billCell.consultationTypeLabel.text = @"电话咨询";
+    }else {
+        billCell.consultationTypeLabel.text = @"视频咨询";
+    }
+}
+
+
+@end

@@ -1,0 +1,23 @@
+//
+//  PatientGroup.m
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/21.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "PatientGroup.h"
+#import "PatientList.h"
+
+@implementation PatientGroup
+
+- (instancetype)initWithDictionary:(NSDictionary *)dictionary {
+    if (self = [super init]) {
+        //self.patients = dictionary[@"patients"];
+        self.groupName = dictionary[@"groupName"];
+        self.groupId   = [dictionary[@"groupId"] integerValue];
+    }
+    return self;
+}
+
+@end

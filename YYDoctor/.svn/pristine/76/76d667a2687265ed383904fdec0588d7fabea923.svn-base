@@ -1,0 +1,22 @@
+//
+//  HUDHelper.h
+//  YYDoctor
+//
+//  Created by MaxJmac on 15/10/16.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface HUDHelper : NSObject
+
++ (void)showMessage:(NSString *)text toView:(UIView *)view;
++ (void)showMessage:(NSString *)text;
+
++ (void)showSuccess:(NSString *)text toView:(UIView *)view;
++ (void)showSuccess:(NSString *)text;
+
++ (void)showError:(NSString *)text toView:(UIView *)view;
++ (void)showError:(NSString *)text;
+
+@end

@@ -1,0 +1,77 @@
+//
+//  SectionManageController.m
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/22.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "SectionManageController.h"
+#import "ChooseSectionCell.h"
+#import "PatientGroup.h"
+
+@interface SectionManageController () <UITableViewDataSource, UITableViewDelegate>
+
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (weak, nonatomic) IBOutlet UIView *maskView;
+@property (weak, nonatomic) IBOutlet UIView *addSectionView;
+
+@end
+
+@implementation SectionManageController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [self.tableView setEditing:YES animated:YES];
+    
+    //添加点击手势
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(hideView)];
+    [self.maskView addGestureRecognizer:tap];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [self hideView];
+}
+
+- (void)hideView {
+    self.maskView.hidden = YES;
+    self.addSectionView.hidden = YES;
+}
+
+//添加分组按钮点击事件
+- (IBAction)addSectionClick:(UIButton *)sender {
+    self.maskView.hidden = NO;
+    self.addSectionView.hidden = NO;
+}
+
+#pragma mark -- UITableView DataSource 
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.dataSource.count;
+}
+
+#pragma mark -- UITableView Delegate 
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    static NSString *identifier = @"ChooseSectionCell";
+    ChooseSectionCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
+    PatientGroup *item = self.dataSource[indexPath.row];
+    cell.title.text = item.name;
+    return cell;
+}
+
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    return YES;
+}
+
+- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return UITableViewCellEditingStyleDelete;
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForDeleteConfirmationButtonForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return @"删除";
+}
+
+@end

@@ -1,0 +1,378 @@
+//
+//  SettingsController.m
+//  YYDoctor
+//
+//  Created by MaxJmac on 15/11/17.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "SettingsController.h"
+#import "SettingsHeaderView.h"
+#import "SettingsFooterView.h"
+#import "YYAPIRequest.h"
+#import "SettingsTimeInfo.h"
+#import "HUDHelper.h"
+#import "LoginInfo.h"
+#import "YYConfig.h"
+
+@interface SettingsController ()
+<UITableViewDataSource,
+UITableViewDelegate,
+UIPickerViewDataSource,
+UIPickerViewDelegate,
+SettingsHeaderViewDelegate,
+SettingsFooterViewDelegate>
+
+@property (nonatomic, weak) IBOutlet UITableView *tableView;
+@property (nonatomic, weak) IBOutlet NSLayoutConstraint *pickerConstraint;
+@property (nonatomic, weak) IBOutlet UIPickerView *pickerView;
+@property (nonatomic, strong) NSMutableArray *dataSource;
+@property (nonatomic, strong) NSArray *rowTitles;
+@property (nonatomic, strong) NSArray *pickerDataSource;
+@property (nonatomic, strong) NSArray *hours;
+@property (nonatomic, strong) NSArray *minutes;
+@property (nonatomic, assign) BOOL isAddingTime;
+@property (nonatomic, assign) NSInteger editingRow;
+
+- (IBAction)onTimeSelected:(id)sender;
+- (IBAction)onPickerCancelClick:(id)sender;
+
+@end
+
+@implementation SettingsController
+
+//请求设置状态
+- (void)requestServiceState {
+    LoginInfo *loginInfo = [LoginInfo currentLoginInfo];
+    NSMutableString *path = [NSMutableString stringWithString:[YYConfig formalServerAddress]];
+    [path appendString:@"CloudDoctor/ws/rest/alertSet/select"];
+    [YYAPIRequest GET:path params:@{@"docId":loginInfo.doctorInfo.doctorId} completion:^(id response, NSError *error) {
+        if (response) {
+            NSDictionary *settings = response[0];
+            NSNumber *addAlert = settings[@"addAlert"];
+            NSNumber *regAlert = settings[@"regAlert"];
+            NSNumber *preAppoAlert = settings[@"preAppoAlert"];
+            NSMutableArray *options = self.dataSource[0];
+            [options replaceObjectAtIndex:0 withObject:addAlert];
+            [options replaceObjectAtIndex:1 withObject:regAlert];
+            [options replaceObjectAtIndex:2 withObject:preAppoAlert];
+            [self.dataSource replaceObjectAtIndex:0 withObject:options];
+            [self.tableView reloadData];
+        }
+    }];
+}
+
+//请求咨询时段
+- (void)requestTime {
+    NSMutableString *path = [NSMutableString stringWithString:[YYConfig formalServerAddress]];
+    [path appendString:@"CloudDoctor/ws/rest/timeSlot/select"];
+    NSNumber *doctorId = [LoginInfo currentLoginInfo].doctorInfo.doctorId;
+    [YYAPIRequest GET:path params:@{@"docId":doctorId} completion:^(id response, NSError *error) {
+        NSMutableArray *tempArray = [NSMutableArray array];
+        [response enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            SettingsTimeInfo *info = [[SettingsTimeInfo alloc] initWithDictionary:obj];
+            [tempArray addObject:info];
+        }];
+        [self.dataSource addObject:tempArray];
+        [self.tableView reloadData];
+    }];
+}
+
+//初始化数据
+- (void)setupData {
+    self.rowTitles = @[@"加号提醒设置",@"挂号提醒设置",@"预约咨询提醒设置"];
+    NSMutableArray *options = [NSMutableArray arrayWithArray:@[@0,@0,@0]];
+    self.dataSource = [[NSMutableArray alloc] initWithObjects:options, nil];
+    self.hours = @[@"08",@"09",@"10",@"11",@"12",@"13",@"14",@"15",@"16",@"17"];
+    self.minutes = @[@"00",@"30"];
+    self.pickerDataSource = @[self.hours,self.minutes,@[@"-"],self.hours,self.minutes];
+    [self requestServiceState];
+    [self requestTime];
+}
+
+//修改设置状态
+- (void)modifyService:(NSString *)service state:(BOOL)isOn {
+    NSMutableString *path = [NSMutableString stringWithString:[YYConfig formalServerAddress]];
+    [path appendString:@"CloudDoctor/ws/rest/alertSet/"];
+    LoginInfo *loginInfo = [LoginInfo currentLoginInfo];
+    NSMutableDictionary *params = [NSMutableDictionary dictionary];
+    [params setObject:loginInfo.doctorInfo.doctorId forKey:@"docId"];
+    [params setObject:@(isOn) forKey:service];
+    [YYAPIRequest POST:path params:params completion:^(id response, NSError *error) {
+        NSInteger code = [response[@"code"] integerValue];
+        if (code == 1) {
+            NSLog(@"设置成功");
+        }else {
+            NSLog(@"%@",response[@"desc"]);
+        }
+    }];
+}
+
+//UISwitch事件
+- (void)onOptionSeleted:(UISwitch *)sender {
+    NSArray *paramsKeys = @[@"addAlert",@"regAlert",@"preAppoAlert"];
+    NSInteger index = sender.tag;
+    [self modifyService:paramsKeys[index] state:sender.isOn];
+}
+
+- (void)resetPicker {
+    for (NSInteger i=0; i<5; i++) {
+        [self.pickerView selectRow:0 inComponent:i animated:NO];
+    }
+    self.pickerConstraint.constant = -260;
+}
+
+- (void)showPicker {
+    [self resetPicker];
+    self.pickerConstraint.constant = 0;
+    [UIView animateWithDuration:0.25 animations:^{
+        [self.view layoutIfNeeded];
+    }];
+}
+
+- (void)hidePicker {
+    self.pickerConstraint.constant = -260;
+    [UIView animateWithDuration:0.25 animations:^{
+        [self.view layoutIfNeeded];
+    }];
+}
+
+- (BOOL)timeValidate {
+    NSInteger beginHourIndex = [self.pickerView selectedRowInComponent:0];
+    NSInteger beginMinuteIndex = [self.pickerView selectedRowInComponent:1];
+    NSInteger endHourIndex = [self.pickerView selectedRowInComponent:3];
+    NSInteger endMinuteIndex = [self.pickerView selectedRowInComponent:4];
+    if (beginHourIndex > endHourIndex) {
+        [HUDHelper showError:@"开始时间不能晚于结束时间"];
+        return NO;
+    }
+    if (beginHourIndex == endHourIndex && beginMinuteIndex >= endMinuteIndex) {
+        [HUDHelper showError:@"时间设置得不合理哟"];
+        return NO;
+    }
+    NSString *beginTime = [NSString stringWithFormat:@"%@:%@",self.hours[beginHourIndex],self.minutes[beginMinuteIndex]];
+    NSString *endTime = [NSString stringWithFormat:@"%@:%@",self.hours[endHourIndex],self.minutes[endMinuteIndex]];
+    NSMutableArray *serveTimes = self.dataSource[1];
+    for (SettingsTimeInfo *info in serveTimes) {
+        if ([info.beginTime isEqualToString:beginTime]
+            && [info.endTime isEqualToString:endTime]) {
+            [HUDHelper showError:@"时间段已存在"];
+            return NO;
+        }
+        NSComparisonResult resultA = [self compareTime:beginTime to:info.beginTime];
+        NSComparisonResult resultB = [self compareTime:beginTime to:info.endTime];
+        if (resultA == NSOrderedDescending && resultB == NSOrderedAscending) {
+            [HUDHelper showError:@"时间段有重叠哟"];
+            return NO;
+        }
+        NSComparisonResult resultC = [self compareTime:endTime to:info.beginTime];
+        NSComparisonResult resultD = [self compareTime:endTime to:info.endTime];
+        if (resultC == NSOrderedDescending && resultD == NSOrderedAscending) {
+            [HUDHelper showError:@"时间段有重叠哟"];
+            return NO;
+        }
+        if (resultA == NSOrderedAscending && resultD == NSOrderedDescending) {
+            [HUDHelper showError:@"时间段有重叠哟"];
+            return NO;
+        }
+    }
+    return YES;
+}
+
+- (IBAction)onTimeSelected:(id)sender {
+    if (![self timeValidate]) {
+        return;
+    }
+    NSInteger beginHourIndex = [self.pickerView selectedRowInComponent:0];
+    NSInteger beginMinuteIndex = [self.pickerView selectedRowInComponent:1];
+    NSInteger endHourIndex = [self.pickerView selectedRowInComponent:3];
+    NSInteger endMinuteIndex = [self.pickerView selectedRowInComponent:4];
+    NSString *beginTime = [NSString stringWithFormat:@"%@:%@",self.hours[beginHourIndex],self.minutes[beginMinuteIndex]];
+    NSString *endTime = [NSString stringWithFormat:@"%@:%@",self.hours[endHourIndex],self.minutes[endMinuteIndex]];
+    SettingsTimeInfo *info = [[SettingsTimeInfo alloc] init];
+    info.beginTime = beginTime;
+    info.endTime = endTime;
+    info.doctorId = [LoginInfo currentLoginInfo].doctorInfo.doctorId;
+    NSMutableArray *items = self.dataSource[1];
+    if (self.isAddingTime) {
+        [items insertObject:info atIndex:0];
+    }else {
+        [items replaceObjectAtIndex:self.editingRow withObject:info];
+    }
+    [items sortUsingComparator:^NSComparisonResult(SettingsTimeInfo *info1, SettingsTimeInfo *info2) {
+        return [info1.beginTime compare:info2.beginTime];
+    }];
+    [self.dataSource replaceObjectAtIndex:1 withObject:items];
+    [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:1] withRowAnimation:UITableViewRowAnimationAutomatic];
+    [self hidePicker];
+}
+
+- (NSComparisonResult)compareTime:(NSString *)timeA to:(NSString *)timeB {
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"HH:mm"];
+    NSDate *dateA = [formatter dateFromString:timeA];
+    NSDate *dateB = [formatter dateFromString:timeB];
+    return [dateA compare:dateB];
+}
+
+- (IBAction)onPickerCancelClick:(id)sender {
+    [self hidePicker];
+}
+
+#pragma mark - Settings Delegation
+
+- (void)settingsTimeSaveClick:(UIButton *)sender {
+    NSArray *saveTimes = self.dataSource[1];
+    NSMutableArray *params = [[NSMutableArray alloc] init];
+    for (SettingsTimeInfo *info in saveTimes) {
+        NSMutableDictionary *timeInfo = [NSMutableDictionary dictionary];
+        [timeInfo setObject:info.beginTime forKey:@"bTime"];
+        [timeInfo setObject:info.endTime forKey:@"eTime"];
+        [timeInfo setObject:info.doctorId forKey:@"docId"];
+        [params addObject:timeInfo];
+    }
+    NSData *data = [NSJSONSerialization dataWithJSONObject:params options:NSJSONWritingPrettyPrinted error:nil];
+    NSString *json = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    NSMutableString *path = [NSMutableString stringWithString:[YYConfig formalServerAddress]];
+    [path appendString:@"CloudDoctor/ws/rest/timeSlot/set"];
+    [YYAPIRequest POST:path params:@{@"param":json} completion:^(id response, NSError *error) {
+        if (response) {
+            NSLog(@"%@",response);
+        }else {
+            NSLog(@"%@",error);
+        }
+        
+    }];
+}
+
+- (void)settingsAddTimeClick:(UIButton *)sender {
+    self.isAddingTime = YES;
+    [self showPicker];
+}
+
+#pragma mark - UIPickerView Delegation
+
+- (NSInteger)numberOfComponentsInPickerView:(UIPickerView *)pickerView {
+    return self.pickerDataSource.count;
+}
+
+- (NSInteger)pickerView:(UIPickerView *)pickerView numberOfRowsInComponent:(NSInteger)component {
+    NSArray *items = self.pickerDataSource[component];
+    return items.count;
+}
+
+- (NSString *)pickerView:(UIPickerView *)pickerView titleForRow:(NSInteger)row forComponent:(NSInteger)component {
+    NSArray *items = self.pickerDataSource[component];
+    NSString *rowTitle = items[row];
+    return rowTitle;
+}
+
+#pragma mark - UITableView Delegation
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return self.dataSource.count;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    NSArray *items = self.dataSource[section];
+    return items.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    static NSString *reuseIdentifier = @"SettingsCell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
+    if (!cell) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
+                                      reuseIdentifier:reuseIdentifier];
+    }
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    if (indexPath.section == 0) {
+        NSString *itemTitle = self.rowTitles[indexPath.row];
+        cell.textLabel.text = itemTitle;
+        UISwitch *option = [[UISwitch alloc] init];
+        NSArray *items = self.dataSource[0];
+        option.on = [items[indexPath.row] boolValue];
+        [option addTarget:self
+                   action:@selector(onOptionSeleted:)
+         forControlEvents:UIControlEventValueChanged];
+        option.tag = indexPath.row;
+        cell.accessoryView = option;
+    }else if (indexPath.section == 1) {
+        NSArray *items = self.dataSource[1];
+        SettingsTimeInfo *info = items[indexPath.row];
+        NSString *timeString = [NSString stringWithFormat:@"%@-%@",info.beginTime,info.endTime];
+        cell.textLabel.text = timeString;
+    }
+    
+    return cell;
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+    if (section == 1) {
+        SettingsHeaderView *view = [[[NSBundle mainBundle] loadNibNamed:@"SettingsHeaderView"
+                                                                  owner:nil
+                                                                options:nil] lastObject];
+        view.delegate = self;
+        return view;
+    }
+    return nil;
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
+    if (section == 1) {
+        SettingsFooterView *view = [[[NSBundle mainBundle] loadNibNamed:@"SettingsFooterView"
+                                                                  owner:nil
+                                                                options:nil] lastObject];
+        view.delegate = self;
+        return view;
+    }
+    return nil;
+}
+
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (indexPath.section == 1) {
+        return YES;
+    }
+    return NO;
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForDeleteConfirmationButtonForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return @"删除";
+}
+
+- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return UITableViewCellEditingStyleDelete;
+}
+
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (editingStyle == UITableViewCellEditingStyleDelete) {
+        NSMutableArray *array = self.dataSource[indexPath.section];
+        [array removeObjectAtIndex:indexPath.row];
+        [self.dataSource replaceObjectAtIndex:indexPath.section withObject:array];
+        [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObjects:indexPath, nil] withRowAnimation:UITableViewRowAnimationTop];
+    }
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    self.isAddingTime = NO;
+    self.editingRow = indexPath.row;
+    [self showPicker];
+}
+
+
+#pragma mark - Lifetime
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    [self setupData];
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+@end

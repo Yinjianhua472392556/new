@@ -1,0 +1,103 @@
+//
+//  VerificationCodeController.m
+//  YYDoctor
+//
+//  Created by apple on 15/12/8.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "VerificationCodeController.h"
+#import "PersonalAPIHelper.h"
+#import "HUDHelper.h"
+
+@interface VerificationCodeController ()
+@property (weak, nonatomic) IBOutlet UITextField *phoneTextField;
+@property (weak, nonatomic) IBOutlet UITextField *VerCodeTextField;
+
+@end
+
+@implementation VerificationCodeController
+//手机验证
+- (BOOL)isPhoneValid:(NSString *)phoneNumber {
+    NSString * MOBILE = @"^1(3[0-9]|5[0-35-9]|8[025-9])\\d{8}$";
+    NSString * CM = @"^1(34[0-8]|(3[5-9]|5[017-9]|8[278])\\d)\\d{7}$";
+    NSString * CU = @"^1(3[0-2]|5[256]|8[56])\\d{8}$";
+    NSString * CT = @"^1((33|53|8[09])[0-9]|349)\\d{7}$";
+    NSPredicate *regextestmobile = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", MOBILE];
+    NSPredicate *regextestcm = [NSPredicate predicateWithFormat:@"SELF MATCHES %@",CM];
+    NSPredicate *regextestcu = [NSPredicate predicateWithFormat:@"SELF MATCHES %@",CU];
+    NSPredicate *regextestct = [NSPredicate predicateWithFormat:@"SELF MATCHES %@",CT];
+    if (([regextestmobile evaluateWithObject:phoneNumber] == YES)
+        || ([regextestcm evaluateWithObject:phoneNumber] == YES)
+        || ([regextestct evaluateWithObject:phoneNumber] == YES)
+        || ([regextestcu evaluateWithObject:phoneNumber] == YES)) {
+        return YES;
+    }else {
+        return NO;
+    }
+}
+
+#pragma mark - IBAction
+- (IBAction)getVerificationCodeClick:(id)sender {
+    BOOL phoneFlag = [self isPhoneValid:self.phoneTextField.text];
+    if (self.phoneTextField.text.length == 0) {
+        [HUDHelper showMessage:@"请输入手机号码" toView:self.view];
+    }else if (!phoneFlag) {
+        [HUDHelper showMessage:@"请输入正确的手机号码" toView:self.view];
+    }else {
+        [self getMessageVerCodeRequest];
+    }
+}
+
+- (IBAction)nextStepClick:(UIButton *)sender {
+    BOOL phoneFlag = [self isPhoneValid:self.phoneTextField.text];
+    NSString *phoneString = self.phoneTextField.text;
+    NSString *VerCodeString = self.VerCodeTextField.text;
+    if ([phoneString isEqualToString:@""]||[VerCodeString isEqualToString:@""]) {
+        [HUDHelper showMessage:@"请输入完整信息" toView:self.view];
+    }else if (!phoneFlag) {
+        [HUDHelper showMessage:@"请输入正确的手机号码" toView:self.view];
+    }else {
+        [self verificationCodeRequest];
+    }
+}
+
+#pragma mark - request
+//发送短信验证码请求
+- (void)getMessageVerCodeRequest {
+    [PersonalAPIHelper sendMessageVerificationCodeWithPhone:self.phoneTextField.text completion:^(id response, NSError *error) {
+        NSInteger code = [response[@"code"] integerValue];
+        if (code == 1) {
+            [HUDHelper showMessage:@"发送验证码成功"];
+        }else {
+            [HUDHelper showError:@"发送验证码失败"];
+        }
+    }];
+}
+//验证码校验请求
+- (void)verificationCodeRequest {
+    [PersonalAPIHelper verCodeVerificationWithPhone:self.phoneTextField.text verCode:self.VerCodeTextField.text completion:^(id response, NSError *error) {
+        NSInteger code = [response[@"code"] integerValue];
+        if (code == 1) {
+            [HUDHelper showMessage:@"验证码校验成功"];
+            UIViewController *vc = [self.storyboard instantiateViewControllerWithIdentifier:@"ModifyPadController"];
+            [self.navigationController pushViewController:vc animated:YES];
+        }else {
+            [HUDHelper showError:@"请输入正确的校验码"];
+        }
+    }];
+}
+
+#pragma mark - lifetime
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+
+@end

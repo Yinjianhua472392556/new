@@ -1,0 +1,224 @@
+//
+//  PatientHttpTool.m
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/29.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "PatientHttpTool.h"
+#import "YYAPIRequest.h"
+#import "PatientGroup.h"
+#import "PatientList.h"
+#import "YYConfig.h"
+#import <AFNetworking.h>
+
+@implementation PatientHttpTool
+
+//获取病人分组数据
++ (void)getPatientGroupWithUserId:(NSInteger)userId
+                          success:(SuccessBlock)success
+                          failure:(FailureBlock)failure {
+    NSDictionary *params = @{@"userId":@(userId)};
+    [YYAPIRequest QmjkGET:@"chatgroup/list" parameters:params success:^(NSArray *response) {
+        NSMutableArray *groupArray = [NSMutableArray array];
+        for (NSDictionary *dict in response) {
+            PatientGroup *group = [[PatientGroup alloc] initWithDictionary:dict];
+            [groupArray addObject:group];
+        }
+        success(groupArray);
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+}
+
+//获取每一个病人分组的数据
++ (void)getPatientListDataWithGroupId:(NSInteger)groupId
+                              success:(SuccessBlock)success
+                              failure:(FailureBlock)failure {
+        NSDictionary *params = @{@"groupId":@(groupId)};
+    [YYAPIRequest QmjkGET:@"friend/list" parameters:params success:^(NSArray *response) {
+        NSMutableArray *listArray = [NSMutableArray array];
+        for (NSDictionary *dict in response) {
+            PatientList *list = [[PatientList alloc] initWithDictionary:dict];
+            [listArray addObject:list];
+        }
+        success(listArray);
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+}
+
+//新增一个好友分组
++ (void)addNewPatientGruopWithParams:(NSDictionary *)params
+                             success:(SuccessBlock)success
+                             failure:(FailureBlock)failure {
+    [YYAPIRequest QmjkPOST:@"chatgroup/add" parameters:params success:^(NSDictionary *response) {
+        success(response);
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+}
+
+//删除一个好友分组
++ (void)deletePatientGroupWithGroupId:(NSInteger)groupId
+                       defaultGroupId:(NSInteger)defaultGroupId
+                              success:(SuccessBlock)success
+                              failure:(FailureBlock)failure {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress3]];
+    [requestPath appendString:[NSString stringWithFormat:@"chatgroup/%ld/%ld", (long)groupId, (long)defaultGroupId]];
+    NSDictionary *params = @{@"groupId":@(groupId),
+                             @"defaultGroupId":@(defaultGroupId)};
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    [manager DELETE:requestPath parameters:params success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *result = responseObject[@"Result"];
+        success(result);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        NSLog(@"error--%@", error);
+    }];
+
+}
++ (void)deletePatientGroupWithUserId:(NSInteger)userId
+                           groupName:(NSString *)groupName
+                             success:(SuccessBlock)success
+                             failure:(FailureBlock)failure {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress3]];
+    [requestPath appendString:[NSString stringWithFormat:@"chatgroup/%ld/%@", (long)userId, groupName]];
+    NSDictionary *params = @{@"userId":@(userId),
+                             @"groupName":groupName};
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    [manager DELETE:requestPath parameters:params success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *result = responseObject[@"Result"];
+        success(result);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        NSLog(@"error--%@", error);
+    }];
+
+}
+
+//修改病人好友备注
++ (void)modifyPatientRemarkWithFriendId:(NSInteger)friendId
+                              describe:(NSString *)describe
+                               success:(SuccessBlock)success
+                               failure:(FailureBlock)failure {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress3]];
+    [requestPath appendString:[NSString stringWithFormat:@"friend/modify/%ld", (long)friendId]];
+    NSDictionary *params = @{@"friendId":@(friendId),
+                             @"description":describe};
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    [manager PUT:requestPath parameters:params success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *result = responseObject[@"Result"];
+        success(result);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        failure(error);
+    }];
+}
+
+//移动好友到其它分组
++ (void)movePatientToNewGroupWithFriendId:(NSInteger)friendId
+                               groupIdOld:(NSInteger)groupIdOld
+                               groupParam:(NSString *)groupParam
+                                  success:(SuccessBlock)success
+                                  failure:(FailureBlock)failure {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress3]];
+    [requestPath appendString:[NSString stringWithFormat:@"friend/up/%ld", (long)friendId]];
+    NSDictionary *params = @{@"friendId":@(friendId),
+                             @"groupIdOld":@(groupIdOld),
+                             @"groupParam":groupParam};
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    [manager PUT:requestPath parameters:params success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *result = responseObject[@"Result"];
+        success(result);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        failure(error);
+    }];
+}
+
+//获取好友分组及好友列表
++ (void)getPatientGroupAndListDataWithUserId:(NSInteger)userId
+                                    success:(SuccessBlock)success
+                                    failure:(FailureBlock)failure {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress3]];
+    [requestPath appendString:[NSString stringWithFormat:@"chatgroup/list/groupfriend"]];
+    NSDictionary *params = @{@"userId":@(userId)};
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    [manager GET:requestPath parameters:params success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *result = responseObject[@"Result"];
+        NSInteger code = [result[@"code"] integerValue];
+        NSInteger number = [result[@"num"] integerValue];
+        if (code == 1) {
+            NSMutableArray *groupArray = [NSMutableArray array];
+            if (number == 1) {
+                NSDictionary *dict = result[@"data"];
+                PatientGroup *group = [[PatientGroup alloc] initWithDictionary:dict];
+                [groupArray addObject:group];
+                success(groupArray);
+            }else {
+                NSArray *array = result[@"data"];
+                for (NSDictionary *dict in array) {
+                PatientGroup *group = [[PatientGroup alloc] initWithDictionary:dict];
+                [groupArray addObject:group];
+                success(groupArray);
+              }
+            }
+        }
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        failure(error);
+    }];
+}
+
+//删除病人好友
++ (void)deletePatientWithFriendId:(NSInteger)friendId
+                          success:(SuccessBlock)success
+                          failure:(FailureBlock)failure {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress3]];
+    [requestPath appendString:[NSString stringWithFormat:@"friend/delete/%ld", (long)friendId]];
+    NSDictionary *params = @{@"friendId":@(friendId)};
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    [manager DELETE:requestPath parameters:params success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *result = responseObject[@"Result"];
+        success(result);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        failure(error);
+    }];
+}
+
+//病人好友分组重命名
++ (void)modifyGroupNameWithUserId:(NSInteger)userId
+                     groupNameOld:(NSString *)groupNameOld
+                     groupNameNew:(NSString *)groupNameNew
+                          success:(SuccessBlock)success
+                          failure:(FailureBlock)failure {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress3]];
+    [requestPath appendString:[NSString stringWithFormat:@"chatgroup/update/%ld", (long)userId]];
+    NSDictionary *params = @{@"userId":@(userId),
+                             @"groupNameOld":groupNameOld,
+                             @"groupNameNew":groupNameNew};
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    [manager PUT:requestPath parameters:params success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSDictionary *result = responseObject[@"Result"];
+        success(result);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        failure(error);
+    }];
+}
+
+//添加好友
++ (void)addNewFriendWithGroupParam:(NSString *)groupParam
+                           dUserId:(NSInteger)dUserId
+                           pUserId:(NSInteger)pUserId
+                           success:(SuccessBlock)success
+                           failure:(FailureBlock)failure {
+    NSDictionary *params = @{@"groupParam":groupParam,
+                             @"dUserId":@(dUserId),
+                             @"pUserId":@(pUserId)};
+    [YYAPIRequest QmjkPOST:@"friend" parameters:params success:^(NSDictionary *response) {
+        success(response);
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+}
+
+
+
+@end

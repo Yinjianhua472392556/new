@@ -1,0 +1,104 @@
+//
+//  PersonalApiTool.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/27.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "DoctorPersonalApiTool.h"
+#import "YYAPIRequest.h"
+#import "ConsultationBillModel.h"
+#import "YYConfig.h"
+#import "AFNetworking.h"
+#import "MessageCenterInfo.h"
+
+NSString *const kUrlSegment = @"CloudDoctor/ws/rest/";
+
+@implementation DoctorPersonalApiTool
+
+//修改医生在线状态
++ (void)modifyDoctorStateWithDoctorId:(NSInteger)doctorId
+                          onlineState:(NSNumber *)onlineState
+                              success:(successBlock)success
+                              failure:(failureBlock)failure {
+    NSString *path = [NSString stringWithFormat:@"%@alertSet/online/%tu",[YYConfig serverAddress],doctorId];
+    NSDictionary *params = @{@"docId":@(doctorId),@"onlineState":onlineState};
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.requestSerializer.timeoutInterval = 10.0f;
+    [manager PUT:path parameters:params success:^(AFHTTPRequestOperation *operation, id response) {
+        success(response);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        failure(error);
+    }];
+}
+
+//加号提示
++ (void)addTipsWithDoctorId:(NSInteger)doctorId
+                    success:(successBlock)success
+                    failure:(failureBlock)failure {
+    NSString *path = [NSString stringWithFormat:@"seq/state/%tu/0",doctorId];
+    [YYAPIRequest GET:path parameters:@{@"docId":@(doctorId)} success:^(NSArray *response) {
+        NSMutableArray *dataArray = [NSMutableArray array];
+        for (NSDictionary *dict in response) {
+            MessageCenterInfo *info = [[MessageCenterInfo alloc] initWithDictionary:dict];
+            info.type = 0;
+            [dataArray addObject:info];
+        }
+        success(dataArray);
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+}
+//加号记录
++ (void)plusRecordWithDoctorId:(NSInteger)doctorId
+                       success:(successBlock)success
+                       failure:(failureBlock)failure {
+    NSString *path = [NSString stringWithFormat:@"seq/state/%tu/4",doctorId];
+    [YYAPIRequest GET:path parameters:@{@"docId":@(doctorId)} success:^(NSArray *response) {
+        NSMutableArray *dataArray = [NSMutableArray array];
+        for (NSDictionary *dict in response) {
+            MessageCenterInfo *info = [[MessageCenterInfo alloc] initWithDictionary:dict];
+            info.type = @4;
+            [dataArray addObject:info];
+        }
+        success(dataArray);
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+    
+}
+//挂号记录
++ (void)getRegistrationRecordWithDoctorId:(NSInteger)doctorId
+                                  success:(successBlock)success
+                                  failure:(failureBlock)failure {
+    NSString *path = [NSString stringWithFormat:@"reg/%tu",doctorId];
+    [YYAPIRequest GET:path parameters:@{@"docId":@(doctorId)} success:^(NSArray *response) {
+        NSMutableArray *array = [NSMutableArray array];
+        for (NSDictionary *dict in response) {
+            MessageCenterInfo *info = [[MessageCenterInfo alloc] initWithDictionary:dict];
+            info.type = @1;
+            [array addObject:info];
+        }
+        success(array);
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+}
+//同意加号、拒绝加号
++ (void)agreeOrRefusePlusWithDoctorId:(NSInteger)doctorId
+                               status:(NSInteger)status
+                              success:(successBlock)success
+                              failure:(failureBlock)failure {
+    NSString *path = [NSString stringWithFormat:@"%@seq/updSeqRecd/%tu",[YYConfig serverAddress],doctorId];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.requestSerializer.timeoutInterval = 10.0f;
+    [manager PUT:path parameters:@{@"doctorId":@(doctorId),@"status":@(status)} success:^(AFHTTPRequestOperation *operation, id response) {
+        success(response);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        failure(error);
+    }];
+    
+}
+
+@end

@@ -1,0 +1,162 @@
+//
+//  PersonalApiTool.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/27.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "PersonalApiTool.h"
+#import "YYAPIRequest.h"
+#import "ConsultationBillModel.h"
+#import "YYConfig.h"
+#import "AFNetworking.h"
+#import "DoctorInformationInfo.h"
+#import "RegistrationRecordInfo.h"
+#import "MessageModel.h"
+
+@implementation PersonalApiTool
+//授权登录
++ (void)loginWithDoctorName:(NSString *)doctorName
+                   password:(NSString *)password
+                    address:(NSString *)address
+                    success:(successBlock)success
+                    failure:(failureBlock)failure {
+    NSDictionary *params = @{@"client_id":@"ios",
+                              @"usertype":@(2),
+                              @"username": doctorName,
+                              @"password": password,
+                            @"grant_type": @"password",
+                            @"logAddress": address};
+    [YYAPIRequest POST:@"oauth2/access_token" parameters:params success:^(NSDictionary *response) {
+        NSInteger code = [response[@"code"] integerValue];
+        if (code != 1) {
+            NSError *error = [NSError errorWithDomain:@"PersonalAPIError" code:code userInfo:@{@"Description":response[@"desc"]}];
+            NSLog(@"登录失败---%@",error);
+        }
+        success(response);
+    } failure:^(NSError *error) {
+        
+    }];
+}
+//获取医生个人信息
++ (void)getDoctorDataWithDoctorAccount:(NSString *)account
+                               success:(successBlock)success
+                               failure:(failureBlock)failure {
+    NSString *path = [NSString stringWithFormat:@"doctors/%@",account];
+    [YYAPIRequest GET:path parameters:@{@"doctorAccount":account} success:^(NSArray *response) {
+        for (NSDictionary *dict in response) {
+            DoctorInformationInfo *info = [[DoctorInformationInfo alloc] initWithDictionary:dict];
+            success(info);
+        }
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+}
+//修改用户密码
++ (void)motityPassword:(NSString *)oldPassword
+           newPassword:(NSString *)newPassword
+       confirmPassword:(NSString *)confirmPassword
+                userId:(NSInteger)userId
+               success:(successBlock)success
+               failure:(failureBlock)failure {
+    NSString *requestPath = [NSString stringWithFormat:@"%@user/%tu/pd",[YYConfig serverAddress2],userId];
+    NSDictionary *parameters = @{@"oldPassword":oldPassword,
+                                 @"newPassword":newPassword,
+                                 @"confirmPassword":confirmPassword,
+                                 @"userId":@(userId)};
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    [manager PUT:requestPath parameters:parameters success:^(AFHTTPRequestOperation *  operation, id responseObject) {
+        NSDictionary *result = responseObject[@"Result"];
+        success(result);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        failure(error);
+    }];
+}
+
+//获取咨询账单
++ (void)getConsultationBillWithDocId:(NSInteger)docId
+                             advType:(NSString *)type
+                             success:(successBlock)success
+                             failure:(failureBlock)failure {
+    NSDictionary *parameters = @{@"docId":@(docId),@"advType":type};
+    [YYAPIRequest GET:@"advbill/" parameters:parameters success:^(NSArray *response) {
+        NSMutableArray *consultatitonBillArray = [NSMutableArray array];
+        for (NSDictionary *dict in response) {
+            ConsultationBillModel *info = [[ConsultationBillModel alloc]initWithDictionary:dict];
+            [consultatitonBillArray addObject:info];
+        }
+        success(consultatitonBillArray);
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+}
+//获取咨询总费用
++ (void)getTotalCostWithDocId:(NSInteger)docId
+                      advType:(NSString *)type
+                      success:(successBlock)success
+                      failure:(failureBlock)failure {
+    NSDictionary *parameters = @{@"docId":@(docId),@"advType":type};
+    [YYAPIRequest GET:@"advbill/totalCost" parameters:parameters success:^(NSArray *response) {
+        success(response);
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+
+}
+//加号提示
++ (void)addTipsWithDoctorId:(NSInteger)doctorId
+                    success:(successBlock)success
+                    failure:(failureBlock)failure {
+    NSString *path = [NSString stringWithFormat:@"seq/state/%tu/0",doctorId];
+    [YYAPIRequest GET:path parameters:@{@"docId":@(doctorId)} success:^(NSArray *response) {
+        NSMutableArray *dataArray = [NSMutableArray array];
+        for (NSDictionary *dict in response) {
+            MessageModel *info = [[MessageModel alloc] initWithDictionary:dict];
+            [dataArray addObject:info];
+        }
+        success(dataArray);
+        NSLog(@"array==%@",dataArray);
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+}
+//加号记录
++ (void)plusRecordWithDoctorId:(NSInteger)doctorId
+                       success:(successBlock)success
+                       failure:(failureBlock)failure {
+    NSString *path = [NSString stringWithFormat:@"seq/state/%tu/4",doctorId];
+    [YYAPIRequest GET:path parameters:@{@"docId":@(doctorId)} success:^(NSArray *response) {
+        NSMutableArray *dataArray = [NSMutableArray array];
+        for (NSDictionary *dict in response) {
+            MessageModel *info = [[MessageModel alloc] initWithDictionary:dict];
+            [dataArray addObject:info];
+        }
+        success(dataArray);
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+    
+}
+//挂号记录
++ (void)getRegistrationRecordWithDoctorId:(NSInteger)doctorId
+                                  success:(successBlock)success
+                                  failure:(failureBlock)failure {
+    NSString *path = [NSString stringWithFormat:@"reg/%tu",doctorId];
+    [YYAPIRequest GET:path parameters:@{@"docId":@(doctorId)} success:^(NSArray *response) {
+        NSMutableArray *array = [NSMutableArray array];
+        for (NSDictionary *dict in response) {
+            RegistrationRecordInfo *info = [[RegistrationRecordInfo alloc] initWithDictionary:dict];
+            [array addObject:info];
+        }
+        success(array);
+        NSLog(@"response==%@",array);
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+}
+
+
+
+
+@end

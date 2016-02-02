@@ -1,0 +1,31 @@
+//
+//  ChatController.m
+//  YYDoctor
+//
+//  Created by MaxJmac on 15/10/15.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "ChatController.h"
+
+@interface ChatController ()
+
+@property (nonatomic, weak) IBOutlet UITableView *tableView;
+@property (nonatomic, weak) IBOutlet UIView *inputBarView;
+@property (nonatomic, weak) IBOutlet UIView *toolsView;
+
+@end
+
+@implementation ChatController
+
+#pragma mark - Lifetime
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+@end

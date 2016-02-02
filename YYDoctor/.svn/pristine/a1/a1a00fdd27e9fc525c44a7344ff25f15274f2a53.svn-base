@@ -1,0 +1,77 @@
+//
+//  PatientMessageController.m
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/22.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "PatientMessageController.h"
+#import "HealthRecordController.h"
+#import "ChooseSectionController.h"
+
+@interface PatientMessageController ()
+@property (weak, nonatomic) IBOutlet UIView *maskView;   //蒙板view
+@property (weak, nonatomic) IBOutlet UIView *popView;    //右上角popView
+@property (weak, nonatomic) IBOutlet UIView *remarkView; //设置备注view
+@property (assign, nonatomic) BOOL rightBarSelected;     //记录右上角rightBar选中状态
+@end
+
+@implementation PatientMessageController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    //创建单击手势
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(hideView)];
+    [self.maskView addGestureRecognizer:tap];
+}
+
+//
+- (void)viewWillAppear:(BOOL)animated {
+    [self hideView];
+}
+
+- (void)hideView {
+    self.popView.hidden = YES;
+    self.maskView.hidden = YES;
+    self.remarkView.hidden = YES;
+    self.rightBarSelected = NO;
+}
+
+//点击右上角barButtonItem对popView,maskView,remarkView进行显示与隐藏操作
+- (IBAction)rightBarClick:(UIBarButtonItem *)sender {
+    if (self.rightBarSelected == YES) {
+        self.maskView.hidden = YES;
+        self.popView.hidden = YES;
+    }else {
+        self.maskView.hidden = NO;
+        self.popView.hidden = NO;
+    }
+    self.rightBarSelected = !self.rightBarSelected;
+    self.remarkView.hidden = YES;
+}
+
+//设置备注点击事件
+- (IBAction)setRemarkClick:(UIButton *)sender {
+    self.maskView.hidden = NO;
+    self.remarkView.hidden = NO;
+    self.popView.hidden = YES;
+}
+
+//popView对应每一项点击跳转事件
+- (IBAction)popViewClick:(UIButton *)sender {
+    if (sender.tag == 0) {
+        UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"Patient" bundle:nil];
+        ChooseSectionController *choose = [storyboard instantiateViewControllerWithIdentifier:NSStringFromClass([ChooseSectionController class])];
+        [self.navigationController pushViewController:choose animated:YES];
+    }
+}
+//查看健康档案按钮点击跳转事件
+- (IBAction)checkHealthRecord:(UIButton *)sender {
+    UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"Patient" bundle:nil];
+    HealthRecordController *record = [storyboard instantiateViewControllerWithIdentifier:NSStringFromClass([HealthRecordController class])];
+    [self.navigationController pushViewController:record animated:YES];
+}
+
+@end

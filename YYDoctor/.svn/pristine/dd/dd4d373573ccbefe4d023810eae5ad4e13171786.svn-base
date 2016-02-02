@@ -1,0 +1,50 @@
+//
+//  LoginViewController.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/21.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "LoginController.h"
+#import "RegisterController.h"
+#import "PersonalApiTool.h"
+#import "Account.h"
+#import "SSKeychain.h"
+
+@interface LoginController ()
+@property (weak, nonatomic) IBOutlet UITextField *phoneField;
+@property (weak, nonatomic) IBOutlet UITextField *passwordField;
+
+@end
+
+@implementation LoginController
+
+#pragma mark - IBAction
+// 注册
+- (IBAction)registerClick:(id)sender {
+    RegisterController * rvc = [self.storyboard instantiateViewControllerWithIdentifier:NSStringFromClass([RegisterController class])];
+    [self.navigationController pushViewController:rvc animated:YES];
+}
+//登录
+- (IBAction)loginClick:(id)sender {
+   
+}
+
+#pragma mark - lifeTime
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    self.navigationController.navigationBar.hidden = YES;
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+
+@end

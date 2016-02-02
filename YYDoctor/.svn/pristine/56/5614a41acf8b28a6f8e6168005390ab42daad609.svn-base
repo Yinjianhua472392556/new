@@ -1,0 +1,131 @@
+//
+//  PatientManageController.m
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/20.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+
+
+#import "PatientManageController.h"
+#import "PatientListCell.h"
+#import "PatientHeaderView.h"
+#import "PatientGroup.h"
+#import "PatientList.h"
+
+@interface PatientManageController ()
+<UITableViewDataSource,
+UITableViewDelegate,
+PatientHeaderViewDelegate>
+
+@property (weak, nonatomic) IBOutlet UIView *maskView; //蒙板view
+@property (weak, nonatomic) IBOutlet UIView *popView;  //右上角popview
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (assign, nonatomic) BOOL rightBarSelected; //记录rightBarButtonItem选中状态
+@property (strong, nonatomic) NSMutableArray *patientArr; //分组数组
+
+@end
+
+@implementation PatientManageController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.rightBarSelected = NO;
+    [self loadPatientData];
+    
+    //创建单击手势
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(hideView)];
+    [self.maskView addGestureRecognizer:tap];
+}
+
+//点击maskView，收起popView
+- (void)hideView {
+    self.popView.hidden = YES;
+    self.maskView.hidden = YES;
+    self.rightBarSelected = NO;
+}
+
+//加载数据
+- (void)loadPatientData {
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"PatientList" ofType:@"plist"];
+    NSArray *array = [NSArray arrayWithContentsOfFile:path];
+    NSMutableArray *pArray = [NSMutableArray array];
+    for (NSDictionary *dict in array) {
+        PatientGroup *paGroup = [[PatientGroup alloc] initWithDictionary:dict];
+        [pArray addObject:paGroup];
+    }
+    self.patientArr = pArray;
+}
+
+//右上角popview缩展操作
+- (IBAction)moreClick:(UIBarButtonItem *)sender {
+    [UIView animateWithDuration:1.0 animations:^{
+        if (self.rightBarSelected == NO) {
+            self.maskView.hidden = NO;
+            self.popView.hidden = NO;
+            self.rightBarSelected = YES;
+        }else {
+            self.maskView.hidden = YES;
+            self.popView.hidden = YES;
+            self.rightBarSelected = NO;
+        }
+    }];
+}
+
+#pragma mark - UITableView Datasource
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return self.patientArr.count;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    PatientGroup *patientGroup = self.patientArr[section];
+    if (!patientGroup.isOpen) {
+        return 0;
+    }else{
+        return patientGroup.patients.count;
+    }
+}
+
+#pragma mark -- UITableView Delegate
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    static NSString *cellID = @"PatientListCell";
+    PatientListCell *cell = [self.tableView dequeueReusableCellWithIdentifier:cellID];
+    
+    //把每一组里面包含的数据转化为PatientList模型
+    PatientGroup *patientGroup = self.patientArr[indexPath.section];
+    NSMutableArray *patArray = [NSMutableArray array];
+    for (NSDictionary *dict in patientGroup.patients) {
+        PatientList *list = [[PatientList alloc] initWithDictionary:dict];
+        [patArray addObject:list];
+    }
+    //设置cell的属性
+    PatientList *patientList = patArray[indexPath.row];
+    cell.icon.image   = [UIImage imageNamed:patientList.icon];
+    cell.name.text    = patientList.name;
+    cell.remark.text  = patientList.remark;
+    cell.gender.text  = patientList.gender;
+    cell.age.text     = patientList.age;
+    
+    return cell;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return 60;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
+    return 40;
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+    PatientHeaderView *headerView = [PatientHeaderView headerViewWithTableView:tableView];
+    headerView.delegate = self;
+    headerView.patientGroup = self.patientArr[section];
+    return headerView;
+}
+
+//调用HeaderView代理方法，同时刷新tableview
+- (void)didClickHeaderView:(PatientHeaderView *)headerView {
+    [self.tableView reloadData];
+}
+
+@end

@@ -1,0 +1,16 @@
+//
+//  ChooseSectionController.h
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/22.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface ChooseSectionController : UIViewController
+
+@property (assign, nonatomic) NSInteger oldGroupId;  /**<原分组ID*/
+@property (assign, nonatomic) NSInteger friendId;    /**<好友ID*/
+
+@end

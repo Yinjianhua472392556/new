@@ -1,0 +1,104 @@
+//
+//  HomePageController.m
+//  YYDoctor
+//
+//  Created by MaxJmac on 15/10/14.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "HomePageController.h"
+#import "ConsultListController.h"
+#import "PatientManageController.h"
+#import "PersonalCenterController.h"
+#import "DoctorAccount.h"
+#import "UIViewController+HUD.h"
+#import "LoginController.h"
+#import "HUDHelper.h"
+#import "MessageCenterController.h"
+
+@interface HomePageController ()
+
+- (IBAction)onConsultListClick:(id)sender;
+- (IBAction)onPatientManageClick:(id)sender;
+- (IBAction)onMoreClick:(id)sender;
+- (IBAction)onPersonalClick:(id)sender;
+
+@end
+
+@implementation HomePageController
+
+#pragma mark - IBActions
+
+- (IBAction)messageCenterClick:(id)sender {
+    if ([DoctorAccount currentAccount]) {
+        UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"Personal" bundle:nil];
+        UIViewController *vc = [storyboard instantiateViewControllerWithIdentifier:@"MessageCenterController"];
+        [self.navigationController pushViewController:vc animated:YES];
+    }else {
+        [HUDHelper showMessage:@"请先登录"];
+        UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"Personal" bundle:nil];
+        UIViewController *lvc = (LoginController *)[storyboard instantiateViewControllerWithIdentifier:NSStringFromClass([LoginController class])];
+        UINavigationController *vc = [[UINavigationController alloc] initWithRootViewController:lvc];
+        [self.navigationController presentViewController:vc animated:YES completion:nil];
+    }
+    
+}
+
+- (IBAction)onConsultListClick:(id)sender {
+    if ([DoctorAccount currentAccount].docId) {
+        ConsultListController *clc = [self.storyboard instantiateViewControllerWithIdentifier:NSStringFromClass([ConsultListController class])];
+        [self.navigationController pushViewController:clc animated:YES];
+    }else {
+        [self showHint:@"请先登录"];
+    }
+}
+
+- (IBAction)onPatientManageClick:(id)sender {
+    UIStoryboard *story = [UIStoryboard storyboardWithName:@"Patient" bundle:nil];
+    PatientManageController *patient = [story instantiateViewControllerWithIdentifier:NSStringFromClass([PatientManageController class])];
+    [self.navigationController pushViewController:patient animated:YES];
+}
+
+- (IBAction)onMoreClick:(id)sender {
+   
+}
+
+- (IBAction)onPersonalClick:(id)sender {
+    if ([DoctorAccount currentAccount]) {
+        UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"Personal" bundle:nil];
+        PersonalCenterController *pvc = [storyboard instantiateViewControllerWithIdentifier:@"PersonalCenterController"];
+        [self.navigationController pushViewController:pvc animated:YES];
+    }else {
+        [HUDHelper showMessage:@"请先登录"];
+        UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"Personal" bundle:nil];
+        UIViewController *lvc = (LoginController *)[storyboard instantiateViewControllerWithIdentifier:NSStringFromClass([LoginController class])];
+        UINavigationController *vc = [[UINavigationController alloc] initWithRootViewController:lvc];
+        [self.navigationController presentViewController:vc animated:YES completion:nil];
+    }
+}
+
+- (void)Login:(NSNotification *)noti {
+    UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"Personal" bundle:nil];
+    UIViewController *lvc = (PersonalCenterController *)[storyboard instantiateViewControllerWithIdentifier:NSStringFromClass([PersonalCenterController class])];
+    [self.navigationController pushViewController:lvc animated:YES];
+}
+
+#pragma mark - Lifetime
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(Login:) name:@"LoginSuccess" object:nil];
+    if (![DoctorAccount currentAccount]) {
+        [HUDHelper showMessage:@"请先登录"];
+        UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"Personal" bundle:nil];
+        UIViewController *lvc = (LoginController *)[storyboard instantiateViewControllerWithIdentifier:NSStringFromClass([LoginController class])];
+        UINavigationController *vc = [[UINavigationController alloc] initWithRootViewController:lvc];
+        [self.navigationController presentViewController:vc animated:YES completion:nil];
+    }
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+@end

@@ -1,0 +1,105 @@
+//
+//  ChooseSectionController.m
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/22.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "ChooseSectionController.h"
+#import "ChooseSectionCell.h"
+#import "PatientGroup.h"
+#import "PatientHttpTool.h"
+#import "HUDHelper.h"
+
+@interface ChooseSectionController () <UITableViewDataSource, UITableViewDelegate>
+
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (strong, nonatomic) NSMutableArray *dataSource;
+@property (strong, nonatomic) ChooseSectionCell *selectedCell;
+@property (assign, nonatomic) NSInteger newGroupId;
+
+@end
+
+@implementation ChooseSectionController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [self loadSectionData];
+}
+
+//加载分组数据
+- (void)loadSectionData {
+
+    [PatientHttpTool getPatientGroupWithUserId:353809 success:^(id result) {
+        self.dataSource = [NSMutableArray arrayWithArray:result];
+        [self.tableView reloadData];
+    } failure:^(NSError *error) {
+        
+    }];
+}
+
+//好友移动到分组完成点击事件
+- (IBAction)finishMoveToNewGroup:(UIBarButtonItem *)sender {
+    NSInteger friendId = self.friendId;
+    NSInteger oldId    = self.oldGroupId;
+    NSInteger newId    = self.newGroupId;
+    [PatientHttpTool movePatientToNewGroupWithFriendId:friendId groupIdOld:oldId groupIdNew:newId success:^(id result) {
+        NSInteger code = [result[@"code"] integerValue];
+        if (code == 1) {
+            [HUDHelper showSuccess:@"成功移动好友到新分组"];
+        }else {
+            [HUDHelper showError:@"移动好友失败"];
+        }
+    } failure:^(NSError *error) {
+        [HUDHelper showError:@"网络失败"];
+    }];
+}
+
+#pragma mark -- UITableView DataSource
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.dataSource.count;
+}
+
+#pragma mark -- UITableView Delegate
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    static NSString *identifier = @"ChooseSectionCell";
+    ChooseSectionCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
+    PatientGroup *item = self.dataSource[indexPath.row];
+    cell.title.text = item.groupName;
+    cell.choose = NO;
+    return cell;
+}
+
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    return YES;
+}
+
+- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return UITableViewCellEditingStyleDelete;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    ChooseSectionCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+    //把上一个点击的cell的选中状态置为no，并把accessoryView置为nil
+    self.selectedCell.choose = NO;
+    self.selectedCell.accessoryView = nil;
+    if (cell.choose == NO) {
+        cell.accessoryView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"sectionCheckMark"]];
+        cell.choose = YES;
+    }else {
+        cell.accessoryView = nil;
+        cell.choose = NO;
+    }
+    //把当前选中的cell赋值给selectedCell
+    self.selectedCell = cell;
+    PatientGroup *group = self.dataSource[indexPath.row];
+    self.newGroupId = group.groupId;
+}
+
+
+@end

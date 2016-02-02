@@ -1,0 +1,453 @@
+//
+//  ConsultListController.m
+//  YYDoctor
+//
+//  Created by MaxJmac on 15/10/14.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "ConsultListController.h"
+#import <DZNEmptyDataSet/UIScrollView+EmptyDataSet.h>
+#import "ConsultListCell.h"
+#import "ChatController.h"
+#import "YYAPIRequest.h"
+#import "ChatListModel.h"
+#import "UIImageView+WebCache.h"
+#import "ConsultDetailsController.h"
+#import "PaidConsultListCell.h"
+#import "ConvertToCommonEmoticonsHelper.h"
+#import "NSDate+Category.h"
+#import "DoctorAccount.h"
+#import "UIViewController+HUD.h"
+
+
+#define RGBACOLOR(r,g,b,a) [UIColor colorWithRed:(r)/255.0 green:(g)/255.0 blue:(b)/255.0 alpha:(a)]
+
+@interface ConsultListController ()
+<UITableViewDataSource,UITableViewDelegate,DZNEmptyDataSetSource,IChatManagerDelegate>
+
+@property (nonatomic, weak) IBOutlet UITableView *tableView;
+@property (weak, nonatomic) IBOutlet UIView *maskView;
+@property (weak, nonatomic) IBOutlet UIView *popView;
+@property (nonatomic, weak) IBOutlet UISegmentedControl *segmentControl;
+@property (weak, nonatomic) IBOutlet UIView *bottomToolbar;
+@property (weak, nonatomic) IBOutlet UIButton *bottomToolbarDeleteButton;
+
+@property (nonatomic, assign) BOOL rightBarSelected;
+
+@property (nonatomic, strong) NSMutableArray *dataSource;
+@property (nonatomic, strong) NSMutableArray *freeDataSource;
+
+@end
+
+@implementation ConsultListController
+
+#pragma mark - 初始化界面数据
+
+- (void)setupData {
+
+    NSString *docId = [DoctorAccount currentAccount].docId;
+    [YYAPIRequest ConsultListGET:@"consultRecord/userList?" parameters:@{@"docId":docId,@"quesType":@(1)} success:^(NSArray *response) { //免费列表
+            [self.freeDataSource removeAllObjects];
+            for (NSDictionary *dict in response) {
+                ChatListModel *listModel = [[ChatListModel alloc] initWithDict:dict];
+                [self.freeDataSource addObject:listModel];
+            }
+            
+        } failure:^(NSError *error) {
+            
+        }];
+    
+}
+
+#pragma mark - segment点击事件
+- (IBAction)segmentControlClick:(UISegmentedControl *)sender {
+    if (sender.selectedSegmentIndex == 0) { //付费列表
+        [self refreshSessionListDataSource];
+    }else{//免费列表
+        [self.tableView reloadData];
+    }
+}
+
+- (IBAction)rightBarClick:(UIBarButtonItem *)sender {
+    self.rightBarSelected = !self.rightBarSelected;
+    self.maskView.hidden = !self.maskView.hidden;
+    self.popView.hidden = !self.popView.hidden;
+}
+
+#pragma mark - UITableView Delegation
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    if (self.segmentControl.selectedSegmentIndex == 0) {
+        return self.dataSource.count;
+    } else {
+        return self.freeDataSource.count;
+    }
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    if(self.segmentControl.selectedSegmentIndex == 0) {//付费列表
+    
+        static NSString *reuseIdentifier = @"PaidConsultListCell";
+        PaidConsultListCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
+        if (cell == nil) {
+            cell = [[PaidConsultListCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:reuseIdentifier];
+        }
+        cell.selectionStyle = UITableViewCellSelectionStyleBlue;
+        EMConversation *conversation = [self.dataSource objectAtIndex:indexPath.row];
+        cell.name = conversation.chatter;
+        if (conversation.chatter) {
+            
+        }
+        cell.placeholderImage = [UIImage imageNamed:@"chatListCellHead"];
+        cell.detailMsg = [self subTitleMessageByConversation:conversation];
+        cell.time = [self lastMessageTimeByConversation:conversation];
+        cell.unreadCount = [self unreadMessageCountByConversation:conversation];
+        if (indexPath.row % 2 == 1) {
+            cell.contentView.backgroundColor = RGBACOLOR(246, 246, 246, 1);
+        }else{
+            cell.contentView.backgroundColor = [UIColor whiteColor];
+        }
+        return cell;
+
+    }else { //免费列表
+    
+        static NSString *reuseIdentifier = @"ConsultListCell";
+        ConsultListCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
+        cell.selectionStyle = UITableViewCellSelectionStyleBlue;
+        
+        ChatListModel *listModel;
+        if (self.segmentControl.selectedSegmentIndex == 0) {
+            listModel = self.dataSource[indexPath.row];
+        }else {
+            listModel = self.freeDataSource[indexPath.row];
+        }
+        [cell.headImageView sd_setImageWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"http://jiankang120.com.cn/%@",listModel.userPhoto]] placeholderImage:[UIImage imageNamed:@"TempHead"]];
+        cell.nameLabel.text = listModel.userName;
+        cell.lastMessageLabel.text = listModel.quesDetail;
+        cell.lastTimeLabel.text = listModel.logCtime;
+        return cell;
+
+    
+    }
+ }
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    if (!tableView.isEditing) { //非编辑状态
+        if(self.segmentControl.selectedSegmentIndex == 0){ //付费列表
+            EMConversation *conversation = self.dataSource[indexPath.row];
+            ChatController *chatController = [[ChatController alloc] initWithChatter:conversation.chatter conversationType:conversation.conversationType];
+            chatController.title = conversation.chatter;
+            [self.navigationController pushViewController:chatController animated:YES];
+        }else{ //免费列表
+            ChatListModel *listModel = self.freeDataSource[indexPath.row];
+            ConsultDetailsController *detailsVC = [self.storyboard instantiateViewControllerWithIdentifier:NSStringFromClass([ConsultDetailsController class])];
+            detailsVC.model = listModel;
+            [self.navigationController pushViewController:detailsVC animated:YES];
+        }
+    }else{//编辑状态
+        
+        if (self.tableView.indexPathsForSelectedRows.count != 0) {
+            [self bottomToolbarDeleteButtonEnable];
+        }else{
+            [self bottomToolbarDeleteButtonDisable];
+        }
+    }
+}
+
+
+- (void)tableView:(UITableView *)tableView didDeselectRowAtIndexPath:(NSIndexPath *)indexPath {
+    if(self.tableView.indexPathsForSelectedRows.count != 0) {
+        [self bottomToolbarDeleteButtonEnable];
+
+    } else {
+        [self bottomToolbarDeleteButtonDisable];
+    }
+}
+
+//是否可以打开编辑模式
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath{
+    return YES;
+}
+
+#pragma mark - DZNEmptyDataSet
+
+- (UIImage *)imageForEmptyDataSet:(UIScrollView *)scrollView {
+    UIImage *image = [UIImage imageNamed:@"EmptyDataSet"];
+    return image;
+}
+
+- (NSAttributedString *)titleForEmptyDataSet:(UIScrollView *)scrollView {
+    NSDictionary *attributes = @{NSFontAttributeName:[UIFont systemFontOfSize:18.0f],
+                                 NSForegroundColorAttributeName:[UIColor blackColor]};
+    NSAttributedString *aString = [[NSAttributedString alloc] initWithString:@"暂无内容" attributes:attributes];
+    return aString;
+}
+
+- (CGFloat)verticalOffsetForEmptyDataSet:(UIScrollView *)scrollView {
+    return -100.0f;
+}
+
+
+#pragma mark - Action
+- (IBAction)popViewSearchAction:(UIButton *)sender {
+    NSLog(@"popViewSearchAction");
+}
+
+- (IBAction)popViewDeleteAction:(id)sender {
+    //修改编辑状态
+    BOOL editing = self.tableView.isEditing;
+    [self.tableView setEditing:!editing animated:YES];
+    if (!editing) { //非编辑状态时修改删除按钮的属性
+        self.bottomToolbarDeleteButton.userInteractionEnabled = NO;
+        self.bottomToolbarDeleteButton.titleLabel.textColor = [UIColor lightGrayColor];
+    }
+    self.maskView.hidden = !self.maskView.hidden;
+    self.popView.hidden = !self.popView.hidden;
+    self.bottomToolbar.hidden = !self.bottomToolbar.hidden;
+    self.rightBarSelected = !self.rightBarSelected;
+}
+- (IBAction)bottomToolbarDeleteAction:(id)sender {
+    if (self.tableView.isEditing) { //tableView处在编辑状态
+        NSArray *selectIndexPaths = self.tableView.indexPathsForSelectedRows;
+        //创建一个数组用来存放所要删除的对象
+        NSMutableArray *deleteLocalData = [NSMutableArray array];
+        NSMutableArray *deleteEaseMobData = [NSMutableArray array];
+        //取出所要删除的对象
+        if(self.segmentControl.selectedSegmentIndex == 0) { //显示的是付费的数据源
+            for (NSIndexPath *index in selectIndexPaths) {
+                EMConversation *data = self.dataSource[index.row];
+                [deleteLocalData addObject:data];
+                [deleteEaseMobData addObject:data.chatter];
+            }
+            //删除环信的数据，同时删除这个会话对象所关联的聊天记录，同时加到内存中之后, 会有相应的回调被触发从而更新UI
+            [[EaseMob sharedInstance].chatManager removeConversationsByChatters:deleteEaseMobData deleteMessages:YES append2Chat:YES];
+            [self.dataSource removeObjectsInArray:deleteLocalData];
+        }else { //显示的是免费得数据源
+            for (NSIndexPath *index in selectIndexPaths) {
+                id data = self.freeDataSource[index.row];
+                [deleteLocalData addObject:data];
+            }
+            [self.freeDataSource removeObjectsInArray:deleteLocalData];
+        }
+        [self.tableView deleteRowsAtIndexPaths:selectIndexPaths withRowAnimation:UITableViewRowAnimationFade];
+    }
+}
+
+- (IBAction)bottomToolbarChooseAllAction:(id)sender {
+    if(self.tableView.isEditing) {//tableView处在编辑状态
+        NSArray *visibleRowPaths = self.tableView.indexPathsForVisibleRows;
+        for (NSIndexPath *index in visibleRowPaths) {
+            [self.tableView selectRowAtIndexPath:index animated:YES scrollPosition:UITableViewScrollPositionNone];
+        }
+        if (visibleRowPaths.count != 0) {
+            [self bottomToolbarDeleteButtonEnable];
+
+        }
+    }
+}
+#pragma mark - private method
+- (void)bottomToolbarDeleteButtonEnable {
+    self.bottomToolbarDeleteButton.userInteractionEnabled = YES;
+    self.bottomToolbarDeleteButton.titleLabel.textColor = [UIColor blueColor];
+}
+
+- (void)bottomToolbarDeleteButtonDisable {
+    self.bottomToolbarDeleteButton.userInteractionEnabled = NO;
+    self.bottomToolbarDeleteButton.titleLabel.textColor = [UIColor lightGrayColor];
+}
+
+#pragma mark - Lifetime
+
+- (void)viewDidLoad {
+        [super viewDidLoad];
+        self.tableView.tableFooterView = [UIView new];
+        self.tableView.allowsMultipleSelectionDuringEditing = YES;
+        [self.tableView registerClass:[PaidConsultListCell class] forCellReuseIdentifier:@"PaidConsultListCell"];
+        [self setupData];
+        [self.tableView reloadData];
+        self.rightBarSelected = NO;
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(hideView)];
+        [self.maskView addGestureRecognizer:tap];
+        //移除EmptyConversations
+        [self removeEmptyConversationsFromDB];
+}
+
+- (void)viewWillAppear:(BOOL)animated{
+
+    [super viewWillAppear:animated];
+    [self registerNotifications]; //添加聊天代理
+}
+
+- (void)viewWillDisappear:(BOOL)animated{
+
+    [super viewWillDisappear:animated];
+    [self unregisterNotifications];
+}
+
+
+- (void)removeEmptyConversationsFromDB {
+    NSArray *conversations = [[EaseMob sharedInstance].chatManager conversations];
+    NSMutableArray *needRemoveConversations;
+    for (EMConversation *conversation in conversations) {
+        if (!conversation.latestMessage || (conversation.conversationType == eConversationTypeChatRoom)) {
+            if (!needRemoveConversations) {
+                needRemoveConversations = [[NSMutableArray alloc] initWithCapacity:0];
+            }
+            
+            [needRemoveConversations addObject:conversation.chatter];
+        }
+    }
+    
+    if (needRemoveConversations && needRemoveConversations.count > 0) {
+        [[EaseMob sharedInstance].chatManager removeConversationsByChatters:needRemoveConversations
+                                                             deleteMessages:YES
+                                                                append2Chat:NO];
+    }
+}
+
+
+
+- (void)hideView {
+    self.maskView.hidden = !self.maskView.hidden;
+    self.popView.hidden = !self.popView.hidden;
+    self.rightBarSelected = !self.rightBarSelected;
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+#pragma mark - 懒加载
+- (NSMutableArray *)dataSource {
+
+    if (_dataSource == nil) {
+        _dataSource = [NSMutableArray array];
+    }
+    return _dataSource;
+
+}
+
+- (NSMutableArray *)freeDataSource {
+
+    if (_freeDataSource == nil) {
+        _freeDataSource = [NSMutableArray array];
+    }
+    return _freeDataSource;
+
+}
+
+#pragma mark - 环信相关的方法
+//刷新会话列表
+-(void)refreshSessionListDataSource {
+    self.dataSource = [self loadDataSource];
+    [self.tableView reloadData];
+}
+
+//按时间顺序返回会话列表
+- (NSMutableArray *)loadDataSource {
+    NSMutableArray *ret = nil;
+    NSArray *conversations = [[EaseMob sharedInstance].chatManager conversations];
+    
+    NSArray* sorte = [conversations sortedArrayUsingComparator:
+                      ^(EMConversation *obj1, EMConversation* obj2){
+                          EMMessage *message1 = [obj1 latestMessage];
+                          EMMessage *message2 = [obj2 latestMessage];
+                          if(message1.timestamp > message2.timestamp) {
+                              return(NSComparisonResult)NSOrderedAscending;
+                          }else {
+                              return(NSComparisonResult)NSOrderedDescending;
+                          }
+                      }];
+    
+    ret = [[NSMutableArray alloc] initWithArray:sorte];
+    return ret;
+}
+
+
+// 得到最后消息文字或者类型
+-(NSString *)subTitleMessageByConversation:(EMConversation *)conversation
+{
+    NSString *ret = @"";
+    EMMessage *lastMessage = [conversation latestMessage];
+    if (lastMessage) {
+        id<IEMMessageBody> messageBody = lastMessage.messageBodies.lastObject;
+        switch (messageBody.messageBodyType) {
+            case eMessageBodyType_Image:{
+                ret = NSLocalizedString(@"message.image1", @"[image]");
+            } break;
+            case eMessageBodyType_Text:{
+                // 表情映射。
+                NSString *didReceiveText = [ConvertToCommonEmoticonsHelper
+                                            convertToSystemEmoticons:((EMTextMessageBody *)messageBody).text];
+                ret = didReceiveText;
+                
+            } break;
+            case eMessageBodyType_Voice:{
+                ret = NSLocalizedString(@"message.voice1", @"[voice]");
+            } break;
+            case eMessageBodyType_Location: {
+                ret = NSLocalizedString(@"message.location1", @"[location]");
+            } break;
+            case eMessageBodyType_Video: {
+                ret = NSLocalizedString(@"message.video1", @"[video]");
+            } break;
+            default: {
+            } break;
+        }
+    }
+    
+    return ret;
+}
+
+// 得到最后消息时间
+-(NSString *)lastMessageTimeByConversation:(EMConversation *)conversation
+{
+    NSString *ret = @"";
+    EMMessage *lastMessage = [conversation latestMessage];;
+    if (lastMessage) {
+        ret = [NSDate formattedTimeFromTimeInterval:lastMessage.timestamp];
+    }
+    
+    return ret;
+}
+
+// 得到未读消息条数
+- (NSInteger)unreadMessageCountByConversation:(EMConversation *)conversation
+{
+    NSInteger ret = 0;
+    ret = conversation.unreadMessagesCount;
+    
+    return  ret;
+}
+
+
+#pragma mark - IChatMangerDelegate
+
+// 未读消息数量变化回调
+-(void)didUnreadMessagesCountChanged {
+    [self refreshSessionListDataSource]; //收到未读消息时更改数据源
+}
+
+- (void)didUpdateConversationList:(NSArray *)conversationList {
+    [self refreshSessionListDataSource];
+    
+}
+
+
+#pragma mark - registerNotifications
+-(void)registerNotifications{
+    [self unregisterNotifications];
+    [[EaseMob sharedInstance].chatManager addDelegate:self delegateQueue:nil];
+}
+
+-(void)unregisterNotifications{
+    [[EaseMob sharedInstance].chatManager removeDelegate:self];
+}
+
+- (void)dealloc{
+    [self unregisterNotifications];
+}
+
+@end

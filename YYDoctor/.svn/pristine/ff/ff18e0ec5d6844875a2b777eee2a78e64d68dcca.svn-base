@@ -1,0 +1,26 @@
+//
+//  MessageModel.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/22.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "MessageInfo.h"
+
+@implementation MessageInfo
+
+- (instancetype)initWithDictionary:(NSDictionary *)dictionary {
+    self = [super init];
+    if (self) {
+        self.docId     = [dictionary[@"docId"] integerValue];
+        self.userId    = [dictionary[@"userId"] integerValue];
+        self.shiftType = [dictionary[@"shiftType"] integerValue];
+        self.time      = [dictionary[@"time"] description];
+        self.state     = [dictionary[@"state"] integerValue];
+    }
+    return self;
+}
+
+
+@end

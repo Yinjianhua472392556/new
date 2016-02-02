@@ -1,0 +1,58 @@
+//
+//  YYAPIRequest.h
+//  YYDoctor
+//
+//  Created by apple on 15/10/27.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface YYAPIRequest : NSObject
+
++ (void)GET:(NSString *)path
+     params:(NSDictionary *)params
+ completion:(void(^)(id response, NSError *error))completion;
+
++ (void)POST:(NSString *)path
+      params:(NSDictionary *)params
+  completion:(void(^)(id response, NSError *error))completion;
+
+
+
++ (void)GET:(NSString *)path
+ parameters:(NSDictionary *)parameters
+    success:(void(^)(NSArray *response))success
+    failure:(void(^)(NSError *error))failure;
+
++ (void)POST:(NSString *)path
+  parameters:(NSDictionary *)parameters
+     success:(void(^)(NSDictionary *response))success
+     failure:(void(^)(NSError *error))failure;
+
++ (void)JianKangPOST:(NSString *)path
+          parmaeters:(NSDictionary *)parameters
+             success:(void(^)(NSDictionary *response))success
+             failure:(void(^)(NSError *error))failure;
+
++ (void)QmjkGET:(NSString *)path
+ parameters:(NSDictionary *)parameters
+    success:(void(^)(NSArray *response))success
+    failure:(void(^)(NSError *error))failure;
+
++ (void)QmjkPOST:(NSString *)path
+  parameters:(NSDictionary *)parameters
+     success:(void(^)(NSDictionary *response))success
+     failure:(void(^)(NSError *error))failure;
+
++ (void)ConsultListGET:(NSString *)path
+            parameters:(NSDictionary *)parameters
+               success:(void(^)(NSArray *response))success
+               failure:(void(^)(NSError *error))failure;
+/**
+ *  @author 尹建华, 15-11-06 09:11:17
+ *
+ *  获取单个用户信息
+ */
++ (void)GETUserInfo:(NSString *)path parameters:(NSDictionary *)parameters success:(void (^)(id response))success failure:(void (^)(NSError *error))failure;
+@end

@@ -1,0 +1,17 @@
+//
+//  MessageCell.h
+//  YYDoctor
+//
+//  Created by apple on 15/10/22.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface MessageCell : UITableViewCell
+
+@property (weak, nonatomic) IBOutlet UILabel *bookingTypeLabel;
+@property (weak, nonatomic) IBOutlet UILabel *userNameLabel;
+@property (weak, nonatomic) IBOutlet UILabel *timeLabel;
+
+@end

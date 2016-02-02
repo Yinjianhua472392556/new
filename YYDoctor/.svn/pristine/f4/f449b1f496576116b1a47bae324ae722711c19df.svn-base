@@ -1,0 +1,33 @@
+//
+//  DoctorInformationInfo.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/28.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "DoctorInformationInfo.h"
+
+@implementation DoctorInformationInfo
+
+-(instancetype)initWithDictionary:(NSDictionary *)dict {
+    self = [super init];
+    if (self) {
+        self.doctorAccount  = dict[@"doctorAccount"];
+        self.doctorName     = dict[@"doctorName"];
+        self.doctorPic      = dict[@"doctorPic"];
+        self.doctorPosition = dict[@"doctorPosition"];
+        self.sectionCode    = dict[@"sectionCode"];
+        self.sectionName    = dict[@"sectionName"];
+        self.departmentCode = dict[@"departmentCode"];
+        self.departmentName = dict[@"departmentName"];
+        self.hospitalCode   = dict[@"hospitalCode"];
+        self.hospitalName   = dict[@"hospitalName"];
+        self.regionCode     = dict[@"regionCode"];
+        self.regionName     = dict[@"regionName"];
+    }
+    return self;
+}
+
+
+@end

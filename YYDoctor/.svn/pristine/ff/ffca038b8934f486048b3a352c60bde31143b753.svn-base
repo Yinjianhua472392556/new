@@ -1,0 +1,52 @@
+//
+//  PersonalAPIHelper.h
+//  YYDoctor
+//
+//  Created by MaxJmac on 15/11/20.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+typedef void(^completion)(id response, NSError *error);
+
+@interface PersonalAPIHelper : NSObject
+
+/**
+ *  @author 叶辉翔, 15-11-23 16:11:27
+ *
+ *  登录接口
+ *
+ *  @param account    帐号
+ *  @param password   密码
+ *  @param completion 完成回调
+ */
++ (void)loginWithAccount:(NSString *)account
+                password:(NSString *)password
+              completion:(completion)completion;
+
+/**
+ *  @author 叶辉翔, 15-11-23 17:11:57
+ *
+ *  注销接口
+ *
+ *  @param accessToken 访问令牌
+ *  @param userId      用户id
+ *  @param completion  完成回调
+ */
++ (void)logoutWithAccessToken:(NSString *)accessToken
+                       userId:(NSNumber *)userId
+                   completion:(completion)completion;
+
+/**
+ *  @author 叶辉翔, 15-11-23 16:11:03
+ *
+ *  获取单个医生信息
+ *
+ *  @param doctorAccount 医生帐号
+ *  @param completion    完成回调
+ */
++ (void)requestDoctorInformation:(NSString *)doctorAccount
+                      completion:(completion)completion;
+
+@end

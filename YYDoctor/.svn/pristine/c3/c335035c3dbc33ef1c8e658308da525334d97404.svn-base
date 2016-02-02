@@ -1,0 +1,18 @@
+//
+//  SetUpViewController.h
+//  YYDoctor
+//
+//  Created by apple on 15/10/23.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+/**
+ *  @author 阮武文, 15-10-23 14:10:29
+ *
+ *  个人中心设置页面
+ *
+ */
+#import <UIKit/UIKit.h>
+
+@interface SettingController : UIViewController
+
+@end

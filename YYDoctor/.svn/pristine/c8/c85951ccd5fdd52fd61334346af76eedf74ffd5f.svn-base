@@ -1,0 +1,77 @@
+//
+//  ModifyPadController.m
+//  YYDoctor
+//
+//  Created by apple on 15/11/2.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "ModifyPadController.h"
+#import "DoctorPersonalApiTool.h"
+#import "HUDHelper.h"
+#import "TestHelper.h"
+
+@interface ModifyPadController ()<UITextFieldDelegate>
+
+@property (weak, nonatomic) IBOutlet UITextField *oldPad;
+@property (weak, nonatomic) IBOutlet UITextField *toNewPad;
+@property (weak, nonatomic) IBOutlet UITextField *confirmPad;
+
+@end
+
+@implementation ModifyPadController
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    [self.oldPad resignFirstResponder];
+    [self.toNewPad resignFirstResponder];
+    [self.confirmPad resignFirstResponder];
+}
+#pragma mark - IBAciton
+//修改密码按钮点击
+- (IBAction)modityPassword:(UIButton *)sender {
+    NSString *oldPad = self.oldPad.text;
+    BOOL newPad = [TestHelper setPassword:self.toNewPad.text];
+    BOOL confirmPad = [TestHelper setPassword:self.confirmPad.text];
+    if (oldPad.length == 0 || self.toNewPad.text.length == 0 ||
+        self.confirmPad.text.length == 0) {
+        [HUDHelper showMessage:@"请填写完整信息" toView:self.view];
+    }else if (!newPad||!confirmPad) {
+        [HUDHelper showMessage:@"密码格式不正确" toView:self.view];
+    }else if (![self.toNewPad.text isEqualToString:self.confirmPad.text]) {
+        [HUDHelper showMessage:@"两次密码输入不一致" toView:self.view];
+    }else {
+        [self modityPasswordRequest];
+    }
+}
+
+- (void)modityPasswordRequest {
+    [DoctorPersonalApiTool motityPassword:self.oldPad.text newPassword:self.toNewPad.text confirmPassword:self.confirmPad.text userId:100001 success:^(id result) {
+        NSInteger code = [result[@"code"] integerValue];
+        if (code == 1) {
+            [HUDHelper showSuccess:@"修改密码成功"];
+            
+        }else {
+            [HUDHelper showError:@"修改密码失败" toView:self.view];
+        }
+    } failure:^(NSError *error) {
+        [HUDHelper showError:@"网络错误"];
+    }];
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField {
+    [textField resignFirstResponder];
+    return YES;
+}
+
+#pragma mark - lifetime
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+
+@end

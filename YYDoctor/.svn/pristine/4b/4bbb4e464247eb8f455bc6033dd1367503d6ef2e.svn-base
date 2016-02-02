@@ -1,0 +1,29 @@
+//
+//  ConsultDetailsController.m
+//  YYDoctor
+//
+//  Created by apple on 15/11/3.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "ConsultDetailsController.h"
+#import "ChatController.h"
+
+@interface ConsultDetailsController()
+@property (weak, nonatomic) IBOutlet NSLayoutConstraint *pictureViewHeightConstraint;
+
+@end
+
+@implementation ConsultDetailsController
+- (void)viewDidLoad {
+    
+    self.pictureViewHeightConstraint.constant = 0;
+}
+
+- (IBAction)answerBtnAction {
+    ChatController *chatVC = [[ChatController alloc]
+                              initWithChatter:self.model.userAccount isGroup:NO];
+    [self.navigationController pushViewController:chatVC animated:YES];
+}
+
+@end

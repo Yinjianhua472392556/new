@@ -1,0 +1,165 @@
+//
+//  MessageCenterViewController.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/22.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "MessageCenterController.h"
+#import <DZNEmptyDataSet/UIScrollView+EmptyDataSet.h>
+#import "MessageCell.h"
+#import "MessageInfo.h"
+#import "YYAPIRequest.h"
+
+@interface MessageCenterController ()
+<UITableViewDataSource,
+UITableViewDelegate,
+DZNEmptyDataSetSource,
+DZNEmptyDataSetDelegate>
+
+@property (weak, nonatomic) IBOutlet UIView *popView;//右上角弹出view
+@property (weak, nonatomic) IBOutlet UIView *maskView;//覆盖view
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (weak, nonatomic) IBOutlet UITableView *listTableView;//右上角表格视图
+@property (weak, nonatomic) IBOutlet UIView *bookinginformationPopView;//显示挂号信息view
+@property (nonatomic, strong) NSMutableArray *dataSource;
+@property (nonatomic, strong) NSArray *listArray;
+@property (nonatomic, assign) BOOL listTableViewSelected;
+
+@end
+
+@implementation MessageCenterController
+
+#pragma mark - IBAction
+
+- (IBAction)bookingType:(id)sender {
+    if (self.listTableViewSelected == NO) {
+        self.popView.hidden  = NO;
+        self.maskView.hidden = NO;
+        self.listTableViewSelected = YES;
+    }else {
+        self.popView.hidden  = YES;
+        self.maskView.hidden = YES;
+        self.listTableViewSelected = NO;
+    }
+}
+
+#pragma mark - Lifetime
+
+//视图即将出现时先隐藏弹出视图
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    self.popView.hidden = YES;
+    self.maskView.hidden = YES;
+    self.bookinginformationPopView.hidden = YES;
+    self.listTableViewSelected = NO;
+    [self requestAllMessage];
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+//    self.dataSource = [NSMutableArray array];
+//    for (int i = 0; i < 20; i ++) {
+//        MessageModel *model = [[MessageModel alloc]init];
+//        model.bookingType = @"挂号";
+//        model.userName    = @"大宝";
+//        model.time        = @"2015-10-22 11:30";
+//        [self.dataSource addObject:model];
+//    }
+    self.listArray =  @[@{@"image":@"new_03",@"title":@"全 部"},
+                        @{@"image":@"new_06",@"title":@"加号提示"},
+                        @{@"image":@"new_10",@"title":@"加号记录"},
+                        @{@"image":@"new_13",@"title":@"挂号提示"},
+                        @{@"image":@"new_10",@"title":@"挂号记录"}];
+    // 单击手势
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(hide:)];
+    [self.maskView addGestureRecognizer:tap];
+}
+
+//点击view隐藏弹出视图
+- (void)hide:(UITapGestureRecognizer *)tapgesture {
+    self.maskView.hidden = YES;
+    self.popView.hidden  = YES;
+    self.bookinginformationPopView.hidden = YES;
+    self.listTableViewSelected = NO;
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+#pragma mark - request
+//获取消息中心全部记录数据请求
+- (void)requestAllMessage {
+    NSString *path = @"seq/doc/2";
+    [YYAPIRequest GET:path parameters:nil success:^(NSArray *response) {
+        if (!self.dataSource) {
+            self.dataSource = [NSMutableArray array];
+        }
+        [response enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            MessageInfo *info = [[MessageInfo alloc] initWithDictionary:obj];
+            [self.dataSource addObject:info];
+        }];
+    } failure:^(NSError *error) {
+        
+    }];
+}
+
+#pragma mark - EmptyDataDelegate 
+
+- (UIImage *)imageForEmptyDataSet:(UIScrollView *)scrollView {
+    UIImage *image = [UIImage imageNamed:@"EmptyDataSet"];
+    return image;
+}
+
+- (NSAttributedString *)titleForEmptyDataSet:(UIScrollView *)scrollView {
+    NSDictionary *attribute = @{NSFontAttributeName:[UIFont systemFontOfSize:18.0],NSForegroundColorAttributeName:[UIColor blackColor]};
+    NSAttributedString *string = [[NSAttributedString alloc]initWithString:@"暂无内容" attributes:attribute];
+    return string;
+}
+
+#pragma mark - tableViewDelegate
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    if (tableView == self.listTableView) {
+        return self.listArray.count;
+    }
+    return self.dataSource.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (tableView == self.tableView) {
+        static NSString *messageCell = @"MessageCell";
+        MessageCell *cell = [tableView dequeueReusableCellWithIdentifier:messageCell];
+        [self configCell:cell indexPath:indexPath];
+        return cell;
+    }else {
+        static NSString *cellID = @"cell";
+        UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellID];
+        if (!cell) {
+            cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellID];
+        }
+        NSDictionary *item  = self.listArray[indexPath.row];
+        cell.textLabel.text = item[@"title"];
+        cell.imageView.image = [UIImage imageNamed:item[@"image"]];
+        return cell;
+    }
+}
+
+- (void)configCell:(UITableViewCell *)cell indexPath:(NSIndexPath *)indexPath {
+    MessageInfo *model = self.dataSource[indexPath.row];
+    MessageCell *messageCell = (MessageCell *)cell;
+    messageCell.userNameLabel.text    = model.userName;
+    messageCell.BookingTypeLabel.text = [NSString stringWithFormat:@"%tu",model.shiftType];
+    messageCell.timeLabel.text        = model.time;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    self.maskView.hidden = NO;
+    self.bookinginformationPopView.hidden = NO;
+    self.popView.hidden = YES;
+}
+
+
+@end

@@ -1,0 +1,17 @@
+//
+//  TestHelper.h
+//  YYDoctor
+//
+//  Created by apple on 15/11/2.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface TestHelper : NSObject
+
++ (BOOL)setPassword:(NSString *)password;//密码验证
+
++(int)compareDate:(NSString*)TimeString AnotherDay:(NSString *)anotherTimeString;//时间比较
+
+@end

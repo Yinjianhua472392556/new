@@ -1,0 +1,61 @@
+//
+//  ChatController.m
+//  YYDoctor
+//
+//  Created by MaxJmac on 15/10/15.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "ChatController.h"
+
+@interface ChatController ()
+<UITableViewDataSource,UITableViewDelegate>
+
+@property (nonatomic, weak) IBOutlet UITableView *tableView;
+@property (nonatomic, weak) IBOutlet UIView *inputBarView;
+@property (nonatomic, weak) IBOutlet UIView *toolsView;
+@property (nonatomic, weak) IBOutlet NSLayoutConstraint *inputBarBottomConstraint;
+@property (nonatomic, assign) BOOL isToolsShow;
+
+- (IBAction)onMenuShow:(id)sender;
+
+@end
+
+@implementation ChatController
+
+#pragma mark - IBActions
+
+- (IBAction)onMenuShow:(id)sender {
+    if (self.isToolsShow) {
+        self.inputBarBottomConstraint.constant = 0;
+    }else {
+        self.inputBarBottomConstraint.constant = 200.0f;
+    }
+    [UIView animateWithDuration:0.3 animations:^{
+        [self.view layoutIfNeeded];
+    }];
+    self.isToolsShow = !self.isToolsShow;
+}
+
+#pragma mark - UITableView Delegation
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return 0;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return nil;
+}
+
+#pragma mark - Lifetime
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [self.tableView reloadData];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+@end

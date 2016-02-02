@@ -1,0 +1,118 @@
+//
+//  PatientMessageController.m
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/22.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "PatientMessageController.h"
+#import "HealthRecordController.h"
+#import "ChooseSectionController.h"
+#import "PatientList.h"
+#import "PatientHttpTool.h"
+#import <MBProgressHUD.h>
+
+@interface PatientMessageController ()
+@property (weak, nonatomic) IBOutlet UIView *maskView;   //蒙板view
+@property (weak, nonatomic) IBOutlet UIView *popView;    //右上角popView
+@property (weak, nonatomic) IBOutlet UIView *remarkView; //设置备注view
+@property (assign, nonatomic) BOOL rightBarSelected;     //记录右上角rightBar选中状态
+@property (weak, nonatomic) IBOutlet UIImageView *headerIcon;
+@property (weak, nonatomic) IBOutlet UIImageView *genderIcon;
+@property (weak, nonatomic) IBOutlet UILabel *name;
+@property (weak, nonatomic) IBOutlet UILabel *age;
+@property (weak, nonatomic) IBOutlet UILabel *account;
+@property (weak, nonatomic) IBOutlet UITextField *describeField;
+
+@end
+
+@implementation PatientMessageController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [self settingFriendData];
+    //创建单击手势
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(hideView)];
+    [self.maskView addGestureRecognizer:tap];
+}
+
+//设置好友信息
+- (void)settingFriendData {
+    //self.headerIcon.image = [UIImage imageNamed:self.patientData.image];
+    self.name.text = self.patientData.nickName;
+    self.age.text = [NSString stringWithFormat:@"%ld岁",  self.patientData.age];
+    self.account.text = self.patientData.userName;
+    if (self.patientData.gender == 1) {
+        self.genderIcon.image = [UIImage imageNamed:@"gender_boy"];
+    }else {
+        self.genderIcon.image = [UIImage imageNamed:@"gender_girl"];
+    }
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [self hideView];
+}
+
+- (void)hideView {
+    self.popView.hidden = YES;
+    self.maskView.hidden = YES;
+    self.remarkView.hidden = YES;
+    self.rightBarSelected = NO;
+}
+
+//点击右上角barButtonItem对popView,maskView,remarkView进行显示与隐藏操作
+- (IBAction)rightBarClick:(UIBarButtonItem *)sender {
+    if (self.rightBarSelected == YES) {
+        self.maskView.hidden = YES;
+        self.popView.hidden = YES;
+    }else {
+        self.maskView.hidden = NO;
+        self.popView.hidden = NO;
+    }
+    self.rightBarSelected = !self.rightBarSelected;
+    self.remarkView.hidden = YES;
+}
+
+//设置备注点击事件
+- (IBAction)setRemarkClick:(UIButton *)sender {
+    self.maskView.hidden = NO;
+    self.remarkView.hidden = NO;
+    self.popView.hidden = YES;
+}
+
+//popView对应每一项点击跳转事件
+- (IBAction)popViewClick:(UIButton *)sender {
+    if (sender.tag == 0) {
+        UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"Patient" bundle:nil];
+        ChooseSectionController *choose = [storyboard instantiateViewControllerWithIdentifier:NSStringFromClass([ChooseSectionController class])];
+        choose.oldGroupId = self.groupId;
+        choose.friendId = self.patientData.friendId;
+        [self.navigationController pushViewController:choose animated:YES];
+    }
+}
+
+//查看健康档案按钮点击跳转事件
+- (IBAction)checkHealthRecord:(UIButton *)sender {
+    UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"Patient" bundle:nil];
+    HealthRecordController *record = [storyboard instantiateViewControllerWithIdentifier:NSStringFromClass([HealthRecordController class])];
+    [self.navigationController pushViewController:record animated:YES];
+}
+
+//设置备注确定取消按钮点击事件
+- (IBAction)settingRemarkClick:(UIButton *)sender {
+    if (sender.tag == 0) {
+        [self hideView];
+    }else {
+    [PatientHttpTool modifyPatientRemarkWithFriendId:self.patientData.friendId describe:self.describeField.text
+                                             success:^(id result) {
+                                                 NSInteger code = [result[@"code"] integerValue];
+                                                 if (code == 1) {
+                                                     [self hideView];
+                                                 }
+                                             } failure:^(NSError *error) {
+                                                 
+                                             }];
+    }
+}
+@end

@@ -1,0 +1,209 @@
+//
+//  YYAPIRequest.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/27.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "YYAPIRequest.h"
+#import "YYConfig.h"
+#import "AFNetworking.h"
+
+@implementation YYAPIRequest
+
++ (void)GET:(NSString *)path
+     params:(NSDictionary *)params
+ completion:(void(^)(id response, NSError *error))completion {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig formalServerAddress]];
+    [requestPath appendString:path];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.requestSerializer.timeoutInterval = 10.0;
+    [manager GET:requestPath parameters:params success:^(AFHTTPRequestOperation * _Nonnull operation, id  _Nonnull responseObject) {
+        NSDictionary *result = responseObject[@"Result"];
+        if (!result) {
+            result = responseObject;
+        }
+        NSInteger code = [result[@"code"] integerValue];
+        id data = result[@"data"];
+        if (code == 1 && ![data isEqual:[NSNull null]]) {
+            completion(data, nil);
+        }else {
+            NSError *error = [NSError errorWithDomain:@"YYAPIRequestError" code:code userInfo:@{@"description":result[@"desc"]}];
+            completion(nil, error);
+        }
+    } failure:^(AFHTTPRequestOperation * _Nonnull operation, NSError * _Nonnull error) {
+        completion(nil, error);
+    }];
+}
+
++ (void)POST:(NSString *)path
+      params:(NSDictionary *)params
+  completion:(void(^)(id response, NSError *error))completion {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig formalServerAddress]];
+    [requestPath appendString:path];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.requestSerializer.timeoutInterval = 10.0;
+    [manager POST:requestPath parameters:params success:^(AFHTTPRequestOperation * _Nonnull operation, id  _Nonnull responseObject) {
+        completion(responseObject, nil);
+    } failure:^(AFHTTPRequestOperation * _Nonnull operation, NSError * _Nonnull error) {
+        completion(nil, error);
+    }];
+}
+
++ (void)PUT:(NSString *)path
+     params:(NSDictionary *)params
+ completion:(void(^)(NSDictionary *response, NSError *error))completion {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig formalServerAddress]];
+    [requestPath appendString:path];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.requestSerializer.timeoutInterval = 10.0;
+    [manager PUT:requestPath parameters:params success:^(AFHTTPRequestOperation * _Nonnull operation, id  _Nonnull responseObject) {
+        NSDictionary *result = responseObject[@"Result"];
+        if (!result) {
+            result = responseObject;
+        }
+        NSInteger code = [result[@"code"] integerValue];
+        if (code == 1) {
+            completion(result, nil);
+        }else {
+            NSError *error = [NSError errorWithDomain:@"YYAPIRequestError" code:code userInfo:@{@"Description":result[@"desc"]}];
+            completion(nil, error);
+        }
+    } failure:^(AFHTTPRequestOperation * _Nonnull operation, NSError * _Nonnull error) {
+        completion(nil, error);
+    }];
+}
+
++ (void)DELETE:(NSString *)path
+        params:(NSDictionary *)params
+    completion:(void (^)(NSDictionary *, NSError *))completion {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig formalServerAddress]];
+    [requestPath appendString:path];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.requestSerializer.timeoutInterval = 10.0;
+    [manager DELETE:requestPath parameters:params success:^(AFHTTPRequestOperation * _Nonnull operation, id  _Nonnull responseObject) {
+        NSDictionary *result = responseObject[@"Result"];
+        if (!result) {
+            result = responseObject;
+        }
+        NSInteger code = [result[@"code"] integerValue];
+        if (code == 1) {
+            completion(result, nil);
+        }else {
+            NSError *error = [NSError errorWithDomain:@"YYAPIRequestError" code:code userInfo:@{@"Description":result[@"desc"]}];
+            completion(nil, error);
+        }
+    } failure:^(AFHTTPRequestOperation * _Nonnull operation, NSError * _Nonnull error) {
+        completion(nil, error);
+    }];
+
+}
+
++ (void)GET:(NSString *)path
+ parameters:(NSDictionary *)parameters
+    success:(void(^)(NSArray *response))success
+    failure:(void(^)(NSError *error))failure {
+    NSMutableString *requestString = [NSMutableString stringWithString:[YYConfig serverAddress]];
+    [requestString appendString:path];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.requestSerializer.timeoutInterval = 10.0;
+    [manager GET:requestString parameters:parameters success:^(AFHTTPRequestOperation * operation, id response) {
+        NSInteger code = [response[@"code"] integerValue];
+        if (code == 1) {
+            NSArray *data = response[@"data"];
+            success(data);
+        }else {
+            NSError *error = [NSError errorWithDomain:@"YYRequestError" code:code userInfo:@{@"description":response[@"desc"]}];
+            NSLog(@"error==%@",error);
+        }
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        failure(error);
+    }];
+}
+
++ (void)POST:(NSString *)path
+  parameters:(NSDictionary *)parameters
+     success:(void(^)(NSDictionary *response))success
+     failure:(void(^)(NSError *error))failure {
+    
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress]];
+    [requestPath appendString:path];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.requestSerializer.timeoutInterval = 10.0;
+    [manager POST:requestPath parameters:parameters success:^(AFHTTPRequestOperation * operation, id response) {
+        success(response);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        failure(error);
+    }];
+
+}
+
++ (void)JianKangPOST:(NSString *)path
+          parmaeters:(NSDictionary *)parameters
+             success:(void(^)(NSDictionary *response))success
+             failure:(void(^)(NSError *error))failure {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress2]];
+    [requestPath appendString:path];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.requestSerializer.timeoutInterval = 10.0;
+    [manager POST:requestPath parameters:parameters success:^(AFHTTPRequestOperation * operation, id responseObject) {
+        NSDictionary *result = responseObject[@"Result"];
+        success(result);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        failure(error);
+    }];
+}
+
++ (void)QmjkGET:(NSString *)path
+     parameters:(NSDictionary *)parameters
+        success:(void(^)(NSArray *response))success
+        failure:(void(^)(NSError *error))failure {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress3]];
+    [requestPath appendString:path];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.requestSerializer.timeoutInterval = 10.0;//超时时间10秒
+    [manager GET:requestPath parameters:parameters success:^(AFHTTPRequestOperation *op, id response) {
+        NSDictionary *result = response[@"Result"];
+        NSInteger code = [result[@"code"] integerValue];
+        if (code == 1) {
+            NSMutableArray *resultArray = [NSMutableArray array];
+            NSInteger num = [result[@"num"] integerValue];
+            if (num == 1) {
+                NSDictionary *data = result[@"data"];
+                [resultArray addObject:data];
+            }else {
+                NSArray *data = result[@"data"];
+                [resultArray addObjectsFromArray:data];
+            }
+            success(resultArray);
+        }else {
+            NSError *error = [NSError errorWithDomain:@"YYAPIRequestError" code:code userInfo:@{@"Description":result[@"desc"]}];
+            NSLog(@"%@",error);
+            failure(error);
+        }
+    } failure:^(AFHTTPRequestOperation *op, NSError *error) {
+        NSLog(@"%@",error);
+        failure(error);
+    }];
+}
+
++ (void)QmjkPOST:(NSString *)path
+      parameters:(NSDictionary *)parameters
+         success:(void(^)(NSDictionary *response))success
+         failure:(void(^)(NSError *error))failure {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress3]];
+    [requestPath appendString:path];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.requestSerializer.timeoutInterval = 10.0;
+    [manager POST:requestPath parameters:parameters success:^(AFHTTPRequestOperation *op, id response) {
+        NSDictionary *result = response[@"Result"];
+        success(result);
+    } failure:^(AFHTTPRequestOperation *op, NSError *error) {
+        NSLog(@"%@",error);
+        failure(error);
+    }];
+}
+
+
+@end

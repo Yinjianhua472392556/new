@@ -1,0 +1,151 @@
+//
+//  PersonalCenterViewController.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/21.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "PersonalCenterController.h"
+#import "ConsultationBillController.h"
+#import "OpenServiceController.h"
+#import "PersonalInformationController.h"
+#import "LoginController.h"
+#import "DoctorPersonalApiTool.h"
+#import "SSKeychain.h"
+#import "HUDHelper.h"
+#import "PersonalAPIHelper.h"
+#import "SettingsController.h"
+#import "LoginInfo.h"
+
+@interface PersonalCenterController ()
+<UITableViewDelegate,UITableViewDataSource>
+
+@property (nonatomic, strong) NSArray *dataSource;
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (weak, nonatomic) IBOutlet UILabel *doctorNameLabel;//医生名字
+@property (weak, nonatomic) IBOutlet UILabel *doctorPositionLabel;//医生职称
+@property (weak, nonatomic) IBOutlet UIImageView *onlineStateImageView;
+@property (weak, nonatomic) IBOutlet UIButton *doctorAvatarButton;//医生头像
+@property (nonatomic, strong) NSString *onlineState;
+
+- (IBAction)onLogoutClick:(id)sender;
+- (IBAction)onPersonalClick:(id)sender;
+
+@end
+
+@implementation PersonalCenterController
+
+#pragma mark - UITableView Delegation
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.dataSource.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath  {
+    static NSString *reuseIdentifier = @"PersonalCenterCell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
+    if (!cell) {
+        cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier];
+    }
+    NSDictionary *item = self.dataSource[indexPath.row];
+    cell.textLabel.text = item[@"title"];
+    cell.imageView.image = [UIImage imageNamed:item[@"image"]];
+    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    return cell;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSDictionary *item = self.dataSource[indexPath.row];
+    NSString *className = item[@"className"];
+    UIViewController *vc = [self.storyboard instantiateViewControllerWithIdentifier:className];
+    [self.navigationController pushViewController:vc animated:YES];
+}
+
+- (void)showLoginController {
+    LoginController *lc = [self.storyboard instantiateViewControllerWithIdentifier:@"LoginController"];
+    UINavigationController *nvc = [[UINavigationController alloc] initWithRootViewController:lc];
+    [self.navigationController presentViewController:nvc animated:YES completion:NULL];
+}
+
+#pragma mark - IBActions
+
+- (IBAction)onLogoutClick:(id)sender {
+    LoginInfo *loginInfo = [LoginInfo currentLoginInfo];
+    [PersonalAPIHelper logoutWithAccessToken:loginInfo.accessToken userId:loginInfo.userId completion:^(id response, NSError *error) {
+        NSDictionary *result = response[@"Result"];
+        NSInteger code = [result[@"code"] integerValue];
+        if (code == 1) {
+            NSString *service = [[NSBundle mainBundle] bundleIdentifier];
+            [SSKeychain deletePasswordForService:service account:loginInfo.account];
+            [LoginInfo deleteLoginInfo];
+            [self showLoginController];
+            //注销环信
+            EMError *error = nil;
+            NSDictionary *info = [[EaseMob sharedInstance].chatManager logoffWithUnbindDeviceToken:YES error:&error];
+            if (!error && info) {
+                NSLog(@"环信注销成功");
+            }else {
+                NSLog(@"环信注销失败");
+            }
+        }else {
+            [HUDHelper showError:@"注销失败,请重试"];
+            NSLog(@"注销失败:%@",result);
+        }
+    }];
+}
+
+- (IBAction)onPersonalClick:(id)sender {
+    PersonalInformationController *plc = [self.storyboard instantiateViewControllerWithIdentifier:@"PersonalInformationController"];
+    plc.doctorState = self.onlineState;
+    [self.navigationController pushViewController:plc animated:YES];
+}
+#pragma mark - request
+//获取医生在线状态
+- (void)getdoctorStateRequest {
+    LoginInfo *loginInfo = [LoginInfo currentLoginInfo];
+    [DoctorPersonalApiTool getDoctorOnlineStateWithDoctorId:[loginInfo.doctorInfo.doctorId integerValue] success:^(id result) {
+        NSDictionary *dict = result[0];
+        self.onlineState = dict[@"onlineState"];
+        if ([self.onlineState isEqualToString:@"0"]) {
+            self.onlineStateImageView.image = [UIImage imageNamed:@"PersonalOfflineState"];
+        }else if ([self.onlineState isEqualToString:@"1"]){
+            self.onlineStateImageView.image = [UIImage imageNamed:@"PersonalOnlineState"];
+        }
+    } failure:^(NSError *error) {
+        
+    }];
+}
+
+#pragma mark - Lifetime
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    LoginInfo *loginInfo = [LoginInfo currentLoginInfo];
+    if (loginInfo) {
+        [self getdoctorStateRequest];
+        self.doctorNameLabel.text = loginInfo.doctorInfo.name;
+        self.doctorPositionLabel.text = loginInfo.doctorInfo.position;
+    }else {
+        [self showLoginController];
+    }
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.tableView.tableFooterView = [UIView new];
+    self.dataSource = @[
+            @{@"title":@"消息中心",@"image":@"login2_17",@"className":@"MessageCenterController"},
+            @{@"title":@"咨询账单",@"image":@"login2_21",@"className":@"ConsultationBillController"},
+            @{@"title":@"开通服务",@"image":@"login2_24",@"className":@"OpenServiceController"},
+            @{@"title":@"设置",@"image":@"login2_28",@"className":@"SettingsController"}];
+    [self.tableView reloadData];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+
+@end

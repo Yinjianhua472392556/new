@@ -1,0 +1,24 @@
+//
+//  HealthRecordController.m
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/22.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "HealthRecordController.h"
+
+@interface HealthRecordController ()
+
+@end
+
+@implementation HealthRecordController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+}
+
+
+
+@end

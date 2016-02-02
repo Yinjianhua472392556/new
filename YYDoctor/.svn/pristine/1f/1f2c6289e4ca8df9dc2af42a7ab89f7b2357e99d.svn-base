@@ -1,0 +1,101 @@
+//
+//  OpenServiceViewController.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/21.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "OpenServiceController.h"
+#import "OpenServiceCell.h"
+#import "YYAPIRequest.h"
+
+@interface OpenServiceController ()
+<UITableViewDataSource,
+UITableViewDelegate,
+OpenServiceCellDelegate
+>
+
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (nonatomic, strong) NSMutableArray *titleArray;
+@property (nonatomic, strong) NSMutableDictionary *serviceStateDictionary;
+
+@end
+
+@implementation OpenServiceController
+
+
+#pragma mark - request
+
+- (void)openServiceRequest {
+    NSString *path = @"advService/open";
+    NSMutableDictionary *params = [NSMutableDictionary dictionaryWithDictionary:self.serviceStateDictionary];
+    [params setObject:@122811 forKey:@"docId"];
+    [YYAPIRequest POST:path parameters:params success:^(NSDictionary *response) {
+       
+    } failure:^(NSError *error) {
+        NSLog(@"error===%@",error);
+    }];
+}
+
+
+- (void)serviceOpened:(UISwitch *)sw {
+    switch (sw.tag) {
+        case 0:
+            [self.serviceStateDictionary setObject:@"1" forKey:@"freeAdv"];
+            break;
+        case 1:
+            [self.serviceStateDictionary setObject:@"1"forKey:@"picAdv"];
+            break;
+        case 2:
+            [self.serviceStateDictionary setObject:@"1"forKey:@"phoAdv"];
+            break;
+        case 3:
+            [self.serviceStateDictionary setObject:@"1" forKey:@"vidAdv"];
+            break;
+        case 4:
+            [self.serviceStateDictionary setObject:@"1"forKey:@"addRegAdv"];
+            break;
+    }
+    [self openServiceRequest];
+}
+
+#pragma mark - tableViewDelegate
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.titleArray.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    static NSString *cellId = @"OpenService";
+    OpenServiceCell *cell = [tableView dequeueReusableCellWithIdentifier:cellId];
+    cell.titleLabel.text = self.titleArray[indexPath.row];
+    cell.openSwitch.tag = indexPath.row;
+    cell.delegate = self;
+    return cell;
+}
+
+#pragma mark - lifeTime
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.serviceStateDictionary = [@{@"freeAdv":@0,
+                                    @"picAdv":@0,
+                                    @"phoAdv":@0,
+                                    @"vidAdv":@0,
+                                    @"addRegAdv":@0} mutableCopy];
+    self.titleArray = [@[@"免费咨询服务",
+                         @"图文咨询服务",
+                         @"电话咨询服务",
+                         @"视频咨询服务",
+                         @"加号服务"] mutableCopy];
+    self.tableView.tableFooterView = [UIView new];
+    [self.tableView reloadData];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+
+@end

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>serverAddress</key>
+	<string>http://gdqmjk.cn:8080/CloudDoctor/ws/rest/</string>
+	<key>serverAddress2</key>
+	<string>http://jiankang120.com.cn:8080/JavaBridgeTemplate621/api/app/</string>
+	<key>serverAddress3</key>
+	<string>http://gdqmjk.cn:8080/JavaBridgeTemplate621/api/app/</string>
+	<key>serverAddress4</key>
+	<string>http://gdqmjk.cn:8080/CloudUser/ws/rest/</string>
+	<key>LocalServer</key>
+	<string>http://gdqmjk.cn:8080/</string>
+	<key>messageVerCode</key>
+	<string>http://jiankang120.com.cn:8080/</string>
+</dict>
+</plist>

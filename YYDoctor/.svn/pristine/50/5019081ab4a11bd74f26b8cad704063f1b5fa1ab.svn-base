@@ -1,0 +1,43 @@
+//
+//  YYChatBarMoreView.h
+//  YYDoctor
+//
+//  Created by apple on 15/10/24.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+typedef enum{
+    ChatMoreTypeChat,
+    ChatMoreTypeGroupChat,
+}ChatMoreType;
+
+@protocol YYChatBarMoreViewDelegate;
+
+
+@interface YYChatBarMoreView : UIView
+@property (nonatomic,assign) id<YYChatBarMoreViewDelegate> delegate;
+
+@property (nonatomic, strong) UIButton *photoButton;
+@property (nonatomic, strong) UIButton *takePicButton;
+@property (nonatomic, strong) UIButton *locationButton;
+@property (nonatomic, strong) UIButton *videoButton;
+@property (nonatomic, strong) UIButton *audioCallButton;
+@property (nonatomic, strong) UIButton *videoCallButton;
+@property (nonatomic, strong) UIButton *chakanbingliButton;
+
+- (instancetype)initWithFrame:(CGRect)frame type:(ChatMoreType)type;
+- (void)setupSubviewsForType:(ChatMoreType)type;
+@end
+
+
+@protocol YYChatBarMoreViewDelegate <NSObject>
+
+@required
+- (void)moreViewTakePicAction:(YYChatBarMoreView *)moreView;
+- (void)moreViewPhotoAction:(YYChatBarMoreView *)moreView;
+- (void)moreViewLocationAction:(YYChatBarMoreView *)moreView;
+- (void)moreViewAudioCallAction:(YYChatBarMoreView *)moreView;
+- (void)moreViewVideoCallAction:(YYChatBarMoreView *)moreView;
+@end

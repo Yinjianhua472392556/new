@@ -1,0 +1,22 @@
+//
+//  ConsultationBillModel.h
+//  YYDoctor
+//
+//  Created by apple on 15/10/21.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface ConsultationBillModel : NSObject
+
+@property (nonatomic, assign) NSInteger userId;
+@property (nonatomic, copy) NSString *userName;
+@property (nonatomic, assign) NSInteger advType;
+@property (nonatomic, copy) NSString *currCost;
+@property (nonatomic, copy) NSString *orderDate;
+@property (nonatomic, assign) NSInteger totalCost;
+
+- (instancetype)initWithDictionary:(NSDictionary *)dictionary;
+
+@end

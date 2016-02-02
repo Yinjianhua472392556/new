@@ -1,0 +1,30 @@
+//
+//  ChatListModel.h
+//  YYDoctor
+//
+//  Created by apple on 15/10/30.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface ChatListModel : NSObject
+/* 咨询问题内容 **/
+@property (nonatomic, copy) NSString *quesDetail;
+/* 用户照片 **/
+@property (nonatomic, copy) NSString *userPhoto;
+/* 咨询时间 **/
+@property (nonatomic, copy) NSString *logCtime;
+/* 咨询类型（1、快速咨询，2、图文咨询，3、电话咨询，4、视频咨询） **/
+@property (nonatomic, copy) NSString *advType;
+/* 用户账号（即为环信账号信息） **/
+@property (nonatomic, copy) NSString *userAccount;
+/* 用户姓名 **/
+@property (nonatomic, copy) NSString *userName;
+/* 记录主键id **/
+@property (nonatomic, copy) NSString *ID;
+/*  用户id **/
+@property (nonatomic, copy) NSString *userId;
+- (instancetype)initWithDict:(NSDictionary *)dict;
+
+@end

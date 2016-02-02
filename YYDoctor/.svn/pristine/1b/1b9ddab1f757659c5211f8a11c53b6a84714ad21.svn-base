@@ -1,0 +1,139 @@
+//
+//  LoginViewController.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/21.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "LoginController.h"
+#import "HUDHelper.h"
+#import "SSKeychain.h"
+#import "SSCheckBoxView.h"
+#import "PersonalAPIHelper.h"
+#import "EncryptHelper.h"
+#import "LoginInfo.h"
+
+@interface LoginController () <UITextFieldDelegate>
+
+@property (weak, nonatomic) IBOutlet UIImageView *backImageView;
+@property (weak, nonatomic) IBOutlet UITextField *accountTextField;
+@property (weak, nonatomic) IBOutlet UITextField *passwordTextField;
+@property (nonatomic, strong) SSCheckBoxView *checkboxView;
+@property (nonatomic, strong) LoginInfo *loginInfo;
+
+@end
+
+@implementation LoginController
+
+- (void)requestDoctorInformation {
+    [HUDHelper showHUD:@"正在获取用户信息..." toView:self.view];
+    [PersonalAPIHelper requestDoctorInformation:self.accountTextField.text completion:^(id response, NSError *error) {
+        [HUDHelper hideHUD:self.view];
+        if (response) {
+            DoctorInfo *doctorInfo = [[DoctorInfo alloc] initWithDictionary:response];
+            self.loginInfo.doctorInfo = doctorInfo;
+            self.loginInfo.account = self.accountTextField.text;
+            self.loginInfo.onlineState = @1;
+            [LoginInfo saveLoginInfo:self.loginInfo];
+            
+            [HUDHelper showSuccess:@"登录成功"];
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"LoginSuccess" object:nil];
+            [self.navigationController dismissViewControllerAnimated:YES completion:NULL];
+        }else {
+            NSString *errorDesc = error.userInfo[@"description"];
+            [HUDHelper showError:errorDesc];
+        }
+    }];
+}
+
+#pragma mark - 登录
+
+- (BOOL)isFieldsValidate {
+    if ([self.accountTextField.text isEqualToString:@""]||[self.passwordTextField.text isEqualToString:@""]) {
+        return NO;
+    }
+    return YES;
+}
+
+- (void)loginWithAccount:(NSString *)account password:(NSString *)password {
+    if (![self isFieldsValidate]) {
+        [HUDHelper showMessage:@"用户名或者密码不能为空" toView:self.view];
+        return;
+    }
+    [HUDHelper showHUD:@"登录中..." toView:self.view];
+    NSString *md5Password = [EncryptHelper md5:password];
+    [PersonalAPIHelper loginWithAccount:account password:md5Password completion:^(id response, NSError *error) {
+        [HUDHelper hideHUD:self.view];
+        if (response) {
+            NSDictionary *result = response[@"Result"];
+            NSNumber *code = result[@"code"];
+            if ([code isEqualToNumber:@1]) {
+                [[EaseMob sharedInstance].chatManager asyncLoginWithUsername:self.accountTextField.text password:md5Password completion:^(NSDictionary *loginInfo, EMError *error) {
+                    if (!error && loginInfo) {
+                        [[EaseMob sharedInstance].chatManager setIsAutoLoginEnabled:YES];
+                    }
+                } onQueue:NULL];
+                //保存密码到keychain
+                NSString *service = [[NSBundle mainBundle] bundleIdentifier];
+                [SSKeychain setPassword:password forService:service account:account];
+                //保存登录信息到本地
+                NSDictionary *data = result[@"data"];
+                self.loginInfo = [[LoginInfo alloc] initWithDictionary:data];
+                [self requestDoctorInformation];
+            }else {
+                NSString *desc = result[@"desc"];
+                [HUDHelper showError:desc];
+            }
+        }else {
+            [HUDHelper showError:@"登录出错啦!"];
+        }
+    }];
+}
+
+- (IBAction)onLoginClick:(id)sender {
+    NSString *account = self.accountTextField.text;
+    NSString *password = self.passwordTextField.text;
+    [self loginWithAccount:account password:password];
+}
+
+#pragma mark - Keyboard Avoid
+
+- (void)onBackgroundTap:(UITapGestureRecognizer *)tap {
+    [self.accountTextField resignFirstResponder];
+    [self.passwordTextField resignFirstResponder];
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField {
+    [textField resignFirstResponder];
+    return YES;
+}
+
+#pragma mark - Lifetime
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    self.accountTextField.text = [userDefaults objectForKey:@"account"];
+    self.navigationController.navigationBar.hidden = YES;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    UIColor *placeholderColor = [UIColor whiteColor];
+    self.accountTextField.attributedPlaceholder = [[NSAttributedString alloc] initWithString:@"手机号码" attributes:@{NSForegroundColorAttributeName:placeholderColor}];
+    self.passwordTextField.attributedPlaceholder = [[NSAttributedString alloc] initWithString:@"密码" attributes:@{NSForegroundColorAttributeName:placeholderColor}];
+    
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onBackgroundTap:)];
+    [self.backImageView addGestureRecognizer:tapGesture];
+    
+    self.checkboxView = [[SSCheckBoxView alloc] initWithFrame:CGRectMake(40, self.passwordTextField.frame.origin.y + 52, 20, 20) style:kSSCheckBoxViewStyleGlossy checked:YES];
+    [self.view addSubview:self.checkboxView];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+
+@end

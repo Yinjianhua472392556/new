@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="8191" systemVersion="14F27" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES">
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="8154"/>
+        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
+    </dependencies>
+    <scenes>
+        <!--病人管理-->
+        <scene sceneID="78K-Jq-NNC">
+            <objects>
+                <viewController storyboardIdentifier="PatientManageController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="TJ0-an-3e1" customClass="PatientManageController" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="xj5-wA-AkR"/>
+                        <viewControllerLayoutGuide type="bottom" id="c3W-Qf-5Rn"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="kef-ss-BNm">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view alpha="0.10000000000000001" contentMode="scaleToFill" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5mv-do-IrL">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                <color key="backgroundColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
+                            </view>
+                            <view contentMode="scaleToFill" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="0Wd-qV-mlM">
+                                <rect key="frame" x="225" y="25" width="90" height="90"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TfX-0Z-pQQ">
+                                        <rect key="frame" x="0.0" y="45" width="90" height="1"/>
+                                        <color key="backgroundColor" cocoaTouchSystemColor="groupTableViewBackgroundColor"/>
+                                    </view>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="hSH-80-TPk">
+                                        <rect key="frame" x="15" y="15" width="60" height="25"/>
+                                        <state key="normal" title="分组管理">
+                                            <color key="titleColor" cocoaTouchSystemColor="darkTextColor"/>
+                                            <color key="titleShadowColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                        </state>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="1ZR-AY-Cly">
+                                        <rect key="frame" x="15" y="50" width="60" height="25"/>
+                                        <state key="normal" title="扫一扫">
+                                            <color key="titleColor" cocoaTouchSystemColor="darkTextColor"/>
+                                            <color key="titleShadowColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                        </state>
+                                    </button>
+                                </subviews>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="90" id="FXv-ht-puD"/>
+                                    <constraint firstAttribute="width" constant="90" id="uLC-Ix-qs0"/>
+                                </constraints>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                        <integer key="value" value="3"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                            </view>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <constraints>
+                            <constraint firstItem="0Wd-qV-mlM" firstAttribute="top" secondItem="xj5-wA-AkR" secondAttribute="bottom" constant="5" id="3vz-wm-OvC"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="5mv-do-IrL" secondAttribute="trailing" constant="-20" id="7QL-jV-wlK"/>
+                            <constraint firstItem="5mv-do-IrL" firstAttribute="leading" secondItem="kef-ss-BNm" secondAttribute="leadingMargin" constant="-20" id="Heq-Mz-PRs"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="0Wd-qV-mlM" secondAttribute="trailing" constant="-15" id="MP4-Hz-g61"/>
+                            <constraint firstItem="5mv-do-IrL" firstAttribute="top" secondItem="xj5-wA-AkR" secondAttribute="bottom" constant="-20" id="Vu0-aa-NhX"/>
+                            <constraint firstItem="c3W-Qf-5Rn" firstAttribute="top" secondItem="5mv-do-IrL" secondAttribute="bottom" id="bFs-Hk-qNM"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" title="病人管理" id="K7q-NU-KA7">
+                        <barButtonItem key="rightBarButtonItem" image="ChatNavMenu" id="Jy6-yh-JsS">
+                            <connections>
+                                <action selector="moreClick:" destination="TJ0-an-3e1" id="Ngt-WE-XEO"/>
+                            </connections>
+                        </barButtonItem>
+                    </navigationItem>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="P0o-T2-wHy" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="185" y="344"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="ChatNavMenu" width="20" height="15"/>
+    </resources>
+</document>

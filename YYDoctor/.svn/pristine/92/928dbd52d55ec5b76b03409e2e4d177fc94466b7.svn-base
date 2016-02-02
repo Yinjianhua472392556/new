@@ -1,0 +1,72 @@
+//
+//  PersonalApiTool.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/27.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "PersonalApiTool.h"
+#import "YYAPIRequest.h"
+#import "ConsultationBillModel.h"
+#import "YYConfig.h"
+#import "AFNetworking.h"
+
+@implementation PersonalApiTool
+//获取咨询账单
++ (void)getConsultationBillWithDocId:(NSInteger)docId
+                             advType:(NSString *)type
+                             success:(successBlock)success
+                             failure:(failureBlock)failure {
+    NSDictionary *parameters = @{@"docId":@(docId),@"advType":type};
+    [YYAPIRequest GET:@"advbill/" parameters:parameters success:^(NSArray *response) {
+        NSMutableArray *consultatitonBillArray = [NSMutableArray array];
+        for (NSDictionary *dict in response) {
+            ConsultationBillModel *info = [[ConsultationBillModel alloc]initWithDictionary:dict];
+            [consultatitonBillArray addObject:info];
+            NSLog(@"array%@",consultatitonBillArray);
+        }
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+}
+//获取咨询总费用
++ (void)getTotalCostWithDocId:(NSInteger)docId
+                      advType:(NSString *)type
+                      success:(successBlock)success
+                      failure:(failureBlock)failure {
+    NSDictionary *parameters = @{@"docId":@(docId),@"advType":type};
+    [YYAPIRequest GET:@"advbill/totalCost" parameters:parameters success:^(NSArray *response) {
+        NSMutableArray *totalCostArray = [NSMutableArray array];
+        for (NSDictionary *dict in response) {
+            ConsultationBillModel *info = [[ConsultationBillModel alloc]initWithDictionary:dict];
+            [totalCostArray addObject:info];
+        }
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+
+}
+
+//修改用户密码
++ (void)motityPassword:(NSString *)oldPassword
+           newPassword:(NSString *)newPassword
+       confirmPassword:(NSString *)confirmPassword
+                userId:(NSInteger)userId
+               success:(successBlock)success
+               failure:(failureBlock)failure {
+    NSString *requestPath = [NSString stringWithFormat:@"%@user/%tu/pd",[YYConfig serverAddress2],userId];
+    NSDictionary *parameters = @{@"oldPassword":oldPassword,
+                                 @"newPassword":newPassword,
+                                 @"confirmPassword":confirmPassword,
+                                 @"userId":@(userId)};
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    [manager PUT:requestPath parameters:parameters success:^(AFHTTPRequestOperation *  operation, id responseObject) {
+        NSDictionary *result = responseObject[@"Result"];
+        success(result);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        failure(error);
+    }];
+}
+
+@end

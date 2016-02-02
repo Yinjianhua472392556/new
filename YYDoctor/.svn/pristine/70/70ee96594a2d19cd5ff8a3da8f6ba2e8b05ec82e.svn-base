@@ -1,0 +1,26 @@
+//
+//  ConsultationBillModel.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/21.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "ConsultationBillModel.h"
+
+@implementation ConsultationBillModel
+
+- (instancetype)initWithDictionary:(NSDictionary *)dictionary {
+    self = [super init];
+    if (self) {
+        self.userId    = [dictionary[@"userId"] integerValue];
+        self.userName  = [dictionary[@"userName"] description];
+        self.advType   = [dictionary[@"advType"] integerValue];
+        self.currCost  = [dictionary[@"currCost"] description];
+        self.orderDate = [dictionary[@"orderDate"] description];
+        self.totalCost = [dictionary[@"totalCost"] integerValue];
+    }
+    return self;
+}
+
+@end

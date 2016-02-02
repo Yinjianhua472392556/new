@@ -1,0 +1,77 @@
+//
+//  ChooseSectionController.m
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/22.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "ChooseSectionController.h"
+#import "ChooseSectionCell.h"
+#import "PatientGroup.h"
+
+@interface ChooseSectionController () <UITableViewDataSource, UITableViewDelegate>
+
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (strong, nonatomic) NSMutableArray *dataSource;
+
+@end
+
+@implementation ChooseSectionController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [self loadSectionData];
+}
+
+//加载分组数据
+- (void)loadSectionData {
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"PatientList" ofType:@"plist"];
+    NSArray *array = [NSArray arrayWithContentsOfFile:path];
+    NSMutableArray *sectionArray = [NSMutableArray array];
+    for (NSDictionary *dict in array) {
+        PatientGroup *group = [[PatientGroup alloc] initWithDictionary:dict];
+        [sectionArray addObject:group];
+    }
+    self.dataSource = sectionArray;
+}
+
+#pragma mark -- UITableView DataSource
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.dataSource.count;
+}
+
+#pragma mark -- UITableView Delegate
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    static NSString *identifier = @"ChooseSectionCell";
+    ChooseSectionCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
+    PatientGroup *item = self.dataSource[indexPath.row];
+    cell.title.text = item.name;
+    cell.choose = NO;
+    return cell;
+}
+
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    return YES;
+}
+
+- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return UITableViewCellEditingStyleDelete;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    ChooseSectionCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+    if (cell.choose == NO) {
+        cell.accessoryType = UITableViewCellAccessoryCheckmark;
+        cell.choose = YES;
+    }else {
+        cell.accessoryType = UITableViewCellAccessoryNone;
+        cell.choose = NO;
+    }
+}
+
+@end

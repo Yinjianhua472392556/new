@@ -1,0 +1,109 @@
+//
+//  ChooseSectionController.m
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/22.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "ChooseSectionController.h"
+#import "ChooseSectionCell.h"
+#import "PatientGroup.h"
+#import "PatientHttpTool.h"
+
+@interface ChooseSectionController () <UITableViewDataSource, UITableViewDelegate>
+
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (strong, nonatomic) NSMutableArray *dataSource;
+@property (strong, nonatomic) ChooseSectionCell *selectedCell;
+@property (assign, nonatomic) NSInteger newGroupId;
+
+@end
+
+@implementation ChooseSectionController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [self loadSectionData];
+}
+
+//加载分组数据
+- (void)loadSectionData {
+//    NSString *path = [[NSBundle mainBundle] pathForResource:@"PatientList" ofType:@"plist"];
+//    NSArray *array = [NSArray arrayWithContentsOfFile:path];
+//    NSMutableArray *sectionArray = [NSMutableArray array];
+//    for (NSDictionary *dict in array) {
+//        PatientGroup *group = [[PatientGroup alloc] initWithDictionary:dict];
+//        [sectionArray addObject:group];
+//    }
+//    self.dataSource = sectionArray;
+    [PatientHttpTool getPatientGroupWithUserId:353809 success:^(id result) {
+        self.dataSource = [NSMutableArray arrayWithArray:result];
+        [self.tableView reloadData];
+    } failure:^(NSError *error) {
+        
+    }];
+}
+
+- (IBAction)finishMoveToNewGroup:(UIBarButtonItem *)sender {
+    [PatientHttpTool movePatientToNewGroupWithFriendId:self.friendId groupIdOld:self.oldGroupId groupIdNew:self.newGroupId success:^(id result) {
+        NSInteger code = [result[@"code"] integerValue];
+        if (code == 1) {
+            NSLog(@"移动好友成功");
+        }
+    } failure:^(NSError *error) {
+        
+    }];
+}
+
+#pragma mark -- UITableView DataSource
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.dataSource.count;
+}
+
+#pragma mark -- UITableView Delegate
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    static NSString *identifier = @"ChooseSectionCell";
+    ChooseSectionCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
+    PatientGroup *item = self.dataSource[indexPath.row];
+    cell.title.text = item.groupName;
+    cell.choose = NO;
+    return cell;
+}
+
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    return YES;
+}
+
+- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return UITableViewCellEditingStyleDelete;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    ChooseSectionCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+    //self.selectedCell.choose = NO;
+    if (cell.choose == NO) {
+        cell.accessoryView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"sectionCheckMark"]];
+        cell.choose = YES;
+    }else {
+        cell.accessoryView = nil;
+        cell.choose = NO;
+    }
+    //self.selectedCell = cell;
+    PatientGroup *group = self.dataSource[indexPath.row];
+    self.newGroupId = group.groupId;
+//    [PatientHttpTool movePatientToNewGroupWithFriendId:self.friendId groupIdOld:self.oldGroupId groupIdNew:group.groupId success:^(id result) {
+//        NSInteger code = [result[@"code"] integerValue];
+//        if (code == 1) {
+//            NSLog(@"移动好友成功");
+//        }
+//    } failure:^(NSError *error) {
+//        
+//    }];
+}
+
+@end

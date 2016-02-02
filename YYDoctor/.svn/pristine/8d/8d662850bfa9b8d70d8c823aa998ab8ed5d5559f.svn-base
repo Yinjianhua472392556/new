@@ -1,0 +1,25 @@
+//
+//  MessageModel.h
+//  YYDoctor
+//
+//  Created by apple on 15/10/22.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface MessageInfo : NSObject
+
+@property (nonatomic, assign) NSInteger docId;//医生id
+@property (nonatomic, assign) NSInteger userId;//用户id
+@property (nonatomic, assign) NSInteger shiftType;//班别类型
+@property (nonatomic, assign) NSInteger state;//医生科室
+@property (nonatomic, copy) NSString *userName;
+@property (nonatomic, copy) NSString *bookingType;
+@property (nonatomic, copy) NSString *time;//日期
+@property (nonatomic, copy) NSString *fee;
+@property (nonatomic, copy) NSString *feeDetail;
+
+- (instancetype)initWithDictionary:(NSDictionary *)dictionary;
+
+@end

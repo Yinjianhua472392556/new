@@ -1,0 +1,33 @@
+//
+//  DoctorInformationInfo.h
+//  YYDoctor
+//
+//  Created by apple on 15/10/28.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+/**
+ *  @author 阮武文, 15-10-29 16:10:47
+ *
+ *  医生个人信息Model
+ *
+ */
+#import <Foundation/Foundation.h>
+
+@interface DoctorInformationInfo : NSObject
+
+@property (nonatomic, copy) NSString *doctorAccount;//医生账号
+@property (nonatomic, copy) NSString *doctorName;//医生名称
+@property (nonatomic, copy) NSString *doctorPic;//医生头像
+@property (nonatomic, copy) NSString *doctorPosition;//医生职位
+@property (nonatomic, copy) NSString *sectionCode;//挂号科室ID
+@property (nonatomic, copy) NSString *sectionName;//挂号科室名称
+@property (nonatomic, copy) NSString *departmentCode;//所属科室ID
+@property (nonatomic, copy) NSString *departmentName;//医院科室名称
+@property (nonatomic, copy) NSString *hospitalCode;//所属医院ID
+@property (nonatomic, copy) NSString *hospitalName;//所属医院
+@property (nonatomic, copy) NSString *regionCode;//所属地区ID
+@property (nonatomic, copy) NSString *regionName;//所属地区名称
+
+-(instancetype)initWithDictionary:(NSDictionary *)dict;
+
+@end

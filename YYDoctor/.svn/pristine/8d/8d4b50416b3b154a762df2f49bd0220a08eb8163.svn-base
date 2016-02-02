@@ -1,0 +1,69 @@
+//
+//  YYAPIRequest.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/27.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "YYAPIRequest.h"
+#import "YYConfig.h"
+#import "AFNetworking.h"
+
+@implementation YYAPIRequest
+
+/**
+ *  @author 阮武文, 15-10-27 11:10:30
+ *
+ *  统一请求接口
+ *
+ *  @param path       接口地址
+ *  @param parameters 接口参数
+ *  @param success    成功返回
+ *  @param failure    失败返回
+ */
+
++ (void)GET:(NSString *)path
+ parameters:(NSDictionary *)parameters
+    success:(void (^)(NSArray *))success
+    failure:(void (^)(NSError *))failure {
+    
+    NSMutableString *requestString = [NSMutableString stringWithString:[YYConfig serverAddress]];
+    [requestString appendString:path];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.requestSerializer.timeoutInterval = 10.0;
+    [manager GET:requestString parameters:parameters success:^(AFHTTPRequestOperation * operation, id response) {
+        NSInteger code = [response[@"code"] integerValue];
+        if (code == 1) {
+            NSArray *data = response[@"data"];
+            success(data);
+        }else {
+            NSError *error = [NSError errorWithDomain:@"YYRequestError" code:code userInfo:@{@"description":response[@"desc"]}];
+            NSLog(@"error==%@",error);
+        }
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        failure(error);
+    }];
+}
+
++ (void)POST:(NSString *)path
+  parameters:(NSDictionary *)parameters
+     success:(void (^)(NSDictionary *))success
+     failure:(void (^)(NSError *))failure {
+    
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress]];
+    [requestPath appendString:path];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.requestSerializer.timeoutInterval = 10.0;
+    [manager POST:requestPath parameters:parameters success:^(AFHTTPRequestOperation * operation, id response) {
+        NSLog(@"%@",response);
+        
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        failure(error);
+    }];
+
+}
+
+
+
+@end

@@ -1,0 +1,151 @@
+//
+//  PatientHttpTool.m
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/29.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "PatientHttpTool.h"
+#import "YYAPIRequest.h"
+#import "PatientGroup.h"
+#import "PatientList.h"
+#import "YYConfig.h"
+#import <AFNetworking.h>
+
+@implementation PatientHttpTool
+
+//获取病人分组数据
++ (void)getPatientGroupWithUserId:(NSInteger)userId
+                          success:(SuccessBlock)success
+                          failure:(FailureBlock)failure {
+    [YYAPIRequest QmjkGET:@"chatgroup/list" parameters:@{@"userId":@(userId)}
+                  success:^(NSArray *response) {
+                      NSMutableArray *groupArray = [NSMutableArray array];
+                      for (NSDictionary *dict in response) {
+                          PatientGroup *group = [[PatientGroup alloc] initWithDictionary:dict];
+                          [groupArray addObject:group];
+                          NSLog(@"resp--%@", response);
+                      }
+                      success(groupArray);
+                  } failure:^(NSError *error) {
+                      failure(error);
+                  }];
+}
+
+//获取每一个病人分组的数据
++ (void)getPatientListDataWithGroupId:(NSInteger)groupId
+                              success:(SuccessBlock)success
+                              failure:(FailureBlock)failure {
+    [YYAPIRequest QmjkGET:@"friend/list" parameters:@{@"groupId":@(groupId)}
+                  success:^(NSArray *response) {
+                      NSMutableArray *listArray = [NSMutableArray array];
+                      for (NSDictionary *dict in response) {
+                          PatientList *list = [[PatientList alloc] initWithDictionary:dict];
+                          [listArray addObject:list];
+                      }
+                      success(listArray);
+                  } failure:^(NSError *error) {
+                      failure(error);
+                  }];
+}
+
+//新增一个好友分组
++ (void)addNewPatientGruopWithParams:(NSDictionary *)params
+                             success:(SuccessBlock)success
+                             failure:(FailureBlock)failure {
+    [YYAPIRequest QmjkPOST:@"chatgroup/add" parameters:params
+                   success:^(NSDictionary *response) {
+                       success(response);
+                   } failure:^(NSError *error) {
+                       failure(error);
+                   }];
+}
+
+//删除一个好友分组
++ (void)deletePatientGroupWithUserId:(NSInteger)userId
+                           groupName:(NSString *)groupName
+                             success:(SuccessBlock)success
+                             failure:(FailureBlock)failure {
+//    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress3]];
+//    [requestPath appendString:[NSString stringWithFormat:@"chatgroup/%ld/%@", (long)userId, groupName]];
+    NSString *requestPath = [NSString stringWithFormat:@"%@chatgroup/%ld/%@", [YYConfig serverAddress3], (long)userId, groupName];
+    NSLog(@"path--%@", requestPath);
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    [manager DELETE:requestPath parameters:@{@"userId":@(userId),
+                                             @"groupName":groupName}
+            success:^(AFHTTPRequestOperation *operation, id responseObject) {
+                NSDictionary *result = responseObject[@"Result"];
+                success(result);
+            } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+                failure(error);
+                NSLog(@"error--%@", error);
+            }];
+}
+
+//修改病人好友备注
++ (void)modifyPatientRemarkWithFriendId:(NSInteger)friendId
+                              describe:(NSString *)describe
+                               success:(SuccessBlock)success
+                               failure:(FailureBlock)failure {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress3]];
+    [requestPath appendString:[NSString stringWithFormat:@"friend/modify/%ld", (long)friendId]];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    [manager PUT:requestPath parameters:@{@"friendId":@(friendId),
+                                          @"description":describe}
+         success:^(AFHTTPRequestOperation *operation, id responseObject) {
+             NSDictionary *result = responseObject[@"Result"];
+             success(result);
+         } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+             failure(error);
+         }];
+    
+}
+
+//移动好友到其它分组
++ (void)movePatientToNewGroupWithFriendId:(NSInteger)friendId
+                               groupIdOld:(NSInteger)groupIdOld
+                               groupIdNew:(NSInteger)groupIdNew
+                                  success:(SuccessBlock)success
+                                  failure:(FailureBlock)failure {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress3]];
+    [requestPath appendString:[NSString stringWithFormat:@"friend/up/%ld", (long)friendId]];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    [manager PUT:requestPath parameters:@{@"friendId":@(friendId),
+                                          @"groupIdOld":@(groupIdOld),
+                                          @"groupIdNew":@(groupIdNew)}
+         success:^(AFHTTPRequestOperation *operation, id responseObject) {
+             NSDictionary *result = responseObject[@"Result"];
+             success(result);
+         } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+             failure(error);
+         }];
+
+}
+
+//获取好友分组及好友列表
++(void)getPatientGroupAndListDataWithUserId:(NSInteger)userId
+                                    success:(SuccessBlock)success
+                                    failure:(FailureBlock)failure {
+    NSMutableString *requestPath = [NSMutableString stringWithString:[YYConfig serverAddress3]];
+    [requestPath appendString:[NSString stringWithFormat:@"chatgroup/list/groupfriend"]];
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    [manager GET:requestPath parameters:@{@"userId":@(userId)}
+         success:^(AFHTTPRequestOperation *operation, id responseObject) {
+             NSDictionary *result = responseObject[@"Result"];
+             NSInteger code = [result[@"code"] integerValue];
+             if (code == 1) {
+                 NSArray *array = result[@"data"];
+                 NSMutableArray *groupArray = [NSMutableArray array];
+                 for (NSDictionary *dict in array) {
+                     PatientGroup *group = [[PatientGroup alloc] initWithDictionary:dict];
+                     [groupArray addObject:group];
+                 }
+                 success(groupArray);
+             }
+             
+         } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+             failure(error);
+         }];
+}
+@end

@@ -1,0 +1,150 @@
+//
+//  PersonalAPIHelper.h
+//  YYDoctor
+//
+//  Created by MaxJmac on 15/11/20.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+typedef void(^completion)(id response, NSError *error);
+
+@interface PersonalAPIHelper : NSObject
+
+/**
+ *  @author 叶辉翔, 15-11-23 16:11:27
+ *
+ *  登录接口
+ *
+ *  @param account    帐号
+ *  @param password   密码
+ *  @param completion 完成回调
+ */
++ (void)loginWithAccount:(NSString *)account
+                password:(NSString *)password
+              completion:(completion)completion;
+
+/**
+ *  @author 叶辉翔, 15-11-23 17:11:57
+ *
+ *  注销接口
+ *
+ *  @param accessToken 访问令牌
+ *  @param userId      用户id
+ *  @param completion  完成回调
+ */
++ (void)logoutWithAccessToken:(NSString *)accessToken
+                       userId:(NSNumber *)userId
+                   completion:(completion)completion;
+
+/**
+ *  @author 叶辉翔, 15-11-23 16:11:03
+ *
+ *  获取单个医生信息
+ *
+ *  @param doctorAccount 医生帐号
+ *  @param completion    完成回调
+ */
++ (void)requestDoctorInformation:(NSString *)doctorAccount
+                      completion:(completion)completion;
+
+/**
+ *  @author 叶辉翔, 15-11-25 15:11:58
+ *
+ *  修改密码-----暂不可用
+ *
+ *  @param userId          用户ID
+ *  @param oldPassword     旧密码
+ *  @param newPassowrd     新密码
+ *  @param confirmPassword 新密码确认
+ *  @param completion      完成回调
+ */
++ (void)modifyPassword:(NSNumber *)userId
+           oldPassword:(NSString *)oldPassword
+           newPassword:(NSString *)newPassowrd
+       confirmPassword:(NSString *)confirmPassword
+            completion:(completion)completion;
+
+/**
+ *  @author 叶辉翔, 15-11-26 10:11:34
+ *
+ *  咨询账单
+ *
+ *  @param doctorId   医生ID
+ *  @param type       账单类型
+ *  @param completion 完成回调
+ */
++ (void)requestConsultationBill:(NSNumber *)doctorId
+                           type:(NSNumber *)type
+                     completion:(completion)completion;
+/**
+ *  @author 阮武文, 15-12-08 10:12:36
+ *
+ *  发送短信验证码
+ *
+ *  @param phone      手机号码
+ *  @param completion 完成回调
+ */
++ (void)sendMessageVerificationCodeWithPhone:(NSString *)phone
+                                  completion:(completion)completion;
+/**
+ *  @author 阮武文, 15-12-08 10:12:15
+ *
+ *  验证码验证
+ *
+ *  @param phone      手机号码
+ *  @param VerCode    验证码
+ *  @param completion 完成回调
+ */
++ (void)verCodeVerificationWithPhone:(NSString *)phone
+                             verCode:(NSString *)verCode
+                          completion:(completion)completion;
+
+/**
+ *  @author 叶辉翔, 15-11-26 10:11:52
+ *
+ *  咨询费用
+ *
+ *  @param doctorId   医生ID
+ *  @param type       账单类型
+ *  @param completion 完成回调
+ */
++ (void)requestBillCost:(NSNumber *)doctorId
+                   type:(NSNumber *)type
+             completion:(completion)completion;
+
+/**
+ *  @author 叶辉翔, 15-12-24 17:12:37
+ *
+ *  加号提示
+ *
+ *  @param doctorId   医生ID
+ *  @param completion 完成回调
+ */
++ (void)requestPlusTips:(NSNumber *)doctorId
+             completion:(completion)completion;
+
+/**
+ *  @author 叶辉翔, 15-12-24 17:12:27
+ *
+ *  加号记录
+ *
+ *  @param doctorId   医生ID
+ *  @param completion 完成回调
+ */
++ (void)requestPlusRecord:(NSNumber *)doctorId
+               completion:(completion)completion;
+
+/**
+ *  @author 叶辉翔, 15-12-24 17:12:55
+ *
+ *  挂号记录
+ *
+ *  @param doctorId   医生ID
+ *  @param completion 完成回调
+ */
++ (void)requestBookingRecord:(NSNumber *)doctorId
+                  completion:(completion)completion;
+
+@end

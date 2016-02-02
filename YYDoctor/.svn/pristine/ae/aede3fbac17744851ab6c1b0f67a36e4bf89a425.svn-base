@@ -1,0 +1,101 @@
+//
+//  PatientHttpTool.h
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/29.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+typedef void(^SuccessBlock)(id result);
+typedef void(^FailureBlock) (NSError *error);
+
+@interface PatientHttpTool : NSObject
+
+/**
+ *  @author 伍秋权, 15-10-29 18:10:02
+ *
+ *  获取病人分组数据
+ *
+ *  @param userId  用户登录ID
+ *  @param success
+ *  @param failure
+ */
++ (void)getPatientGroupWithUserId:(NSInteger)userId
+                          success:(SuccessBlock)success
+                          failure:(FailureBlock)failure;
+
+
+/**
+ *  @author 伍秋权, 15-10-29 19:10:17
+ *
+ *  获取每一个病人分组的数据
+ *
+ *  @param groupId 分组ID
+ *  @param success
+ *  @param failure 
+ */
++ (void)getPatientListDataWithGroupId:(NSInteger)groupId
+                              success:(SuccessBlock)success
+                              failure:(FailureBlock)failure;
+
+/**
+ *  @author 伍秋权, 15-10-30 07:10:57
+ *
+ *  新增一个好友分组
+ *
+ *  @param params  参数字典
+ *  @param success
+ *  @param failure 
+ */
++ (void)addNewPatientGruopWithParams:(NSDictionary *)params
+                             success:(SuccessBlock)success
+                             failure:(FailureBlock)failure;
+
+/**
+ *  @author 伍秋权, 15-10-30 08:10:25
+ *
+ *  删除一个好友分组
+ *
+ *  @param params  参数字典
+ *  @param success
+ *  @param failure
+ */
++ (void)deletePatientGroupWithUserId:(NSInteger)userId
+                           groupName:(NSString *)groupName
+                             success:(SuccessBlock)success
+                             failure:(FailureBlock)failure;
+
+/**
+ *  @author 伍秋权, 15-10-30 11:10:55
+ *
+ *  修改病人好友备注
+ *
+ *  @param friendId 好友ID
+ *  @param describe 备注描述
+ *  @param success
+ *  @param failure  
+ */
++ (void)modifyPatientRemarkWithFriendId:(NSInteger)friendId
+                               describe:(NSString *)describe
+                                success:(SuccessBlock)success
+                                failure:(FailureBlock)failure;
+
+/**
+ *  @author 伍秋权, 15-10-30 15:10:36
+ *
+ *  移动好友到其它分组
+ *
+ *  @param friendId   好友ID
+ *  @param groupIdOld 原分组ID
+ *  @param groupIdNew 新的分组ID
+ *  @param success
+ *  @param failure    
+ */
++ (void)movePatientToNewGroupWithFriendId:(NSInteger)friendId
+                               groupIdOld:(NSInteger)groupIdOld
+                               groupIdNew:(NSInteger)groupIdNew
+                                  success:(SuccessBlock)success
+                                  failure:(FailureBlock)failure;
+@end

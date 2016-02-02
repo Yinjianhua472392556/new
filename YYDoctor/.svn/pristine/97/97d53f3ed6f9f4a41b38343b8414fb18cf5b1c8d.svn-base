@@ -1,0 +1,87 @@
+//
+//  LoginViewController.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/21.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "LoginController.h"
+#import "RegisterController.h"
+#import "PersonalApiTool.h"
+#import <CommonCrypto/CommonDigest.h>
+
+
+@interface LoginController ()<UITextFieldDelegate>
+
+@property (weak, nonatomic) IBOutlet UIImageView *backImageView;
+
+
+@end
+@interface LoginController ()
+
+@property (weak, nonatomic) IBOutlet UITextField *phoneField;
+@property (weak, nonatomic) IBOutlet UITextField *passwordField;
+
+@end
+
+@implementation LoginController
+
+#pragma mark - IBAction
+// 注册
+- (IBAction)registerClick:(id)sender {
+    RegisterController * rvc = [self.storyboard instantiateViewControllerWithIdentifier:NSStringFromClass([RegisterController class])];
+    [self.navigationController pushViewController:rvc animated:YES];
+}
+//登录
+- (IBAction)loginClick:(id)sender {
+    [[EaseMob sharedInstance].chatManager asyncLoginWithUsername:self.phoneField.text password:self.passwordField.text];
+    //设置是否自动登录
+    [[EaseMob sharedInstance].chatManager setIsAutoLoginEnabled:YES];
+    [self  dismissViewControllerAnimated:YES completion:nil];
+}
+
+#pragma mark - lifeTime
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //UITextField设置placeholder字体颜色
+    UIColor *color = [UIColor whiteColor];
+    self.phoneField.attributedPlaceholder = [[NSAttributedString alloc]initWithString:@"手机号码" attributes:@{NSForegroundColorAttributeName:color}];
+    self.passwordField.attributedPlaceholder = [[NSAttributedString alloc]initWithString:@"密码" attributes:@{NSForegroundColorAttributeName:color}];
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapClick:)];
+    [self.backImageView addGestureRecognizer:tap];
+}
+
+- (void)tapClick:(UITapGestureRecognizer *)tap {
+    [self.passwordField resignFirstResponder];
+    [self.phoneField resignFirstResponder];
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField {
+    [textField resignFirstResponder];
+    return YES;
+}
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    self.navigationController.navigationBar.hidden = YES;
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+
++ (NSString *)md5:(NSString *)text {
+    const char *original_str = [text UTF8String];
+    unsigned char result[CC_MD5_DIGEST_LENGTH];
+    CC_MD5(original_str, (CC_LONG)strlen(original_str), result);
+    NSMutableString *hash = [NSMutableString string];
+    for (int i = 0; i < 16; i++)
+        [hash appendFormat:@"%02X", result[i]];
+    return [hash lowercaseString];
+}
+
+
+
+@end

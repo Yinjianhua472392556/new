@@ -1,0 +1,52 @@
+//
+//  PersonalAPIHelper.m
+//  YYDoctor
+//
+//  Created by MaxJmac on 15/11/20.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "PersonalAPIHelper.h"
+#import "YYAPIRequest.h"
+#import "YYConfig.h"
+
+static NSString *const kUrlAddressSegment = @"JavaBridgeTemplate621/api/app/";
+
+@implementation PersonalAPIHelper
+
++ (void)loginWithAccount:(NSString *)account password:(NSString *)password completion:(completion)completion {
+    NSMutableString *path = [NSMutableString stringWithString:[YYConfig formalServerAddress]];
+    [path appendString:kUrlAddressSegment];
+    [path appendString:@"oauth2/access_token"];
+    NSDictionary *params = @{@"client_id":@"ios",
+                             @"usertype":@2,
+                             @"username":account,
+                             @"password":password,
+                             @"grant_type":@"password",
+                             @"logAddress":@"广东省广州市"};
+    [YYAPIRequest POST:path params:params completion:^(id response, NSError *error) {
+        completion(response, error);
+    }];
+}
+
++ (void)logoutWithAccessToken:(NSString *)accessToken userId:(NSNumber *)userId completion:(completion)completion {
+    NSMutableString *path = [NSMutableString stringWithString:[YYConfig formalServerAddress]];
+    [path appendString:kUrlAddressSegment];
+    [path appendString:@"oauth2/revokeoauth"];
+    NSDictionary *params = @{@"access_token":accessToken,@"userId":userId};
+    [YYAPIRequest POST:path params:params completion:^(id response, NSError *error) {
+        completion(response, error);
+    }];
+}
+
++ (void)requestDoctorInformation:(NSString *)doctorAccount completion:(completion)completion {
+    NSMutableString *path = [NSMutableString stringWithString:[YYConfig formalServerAddress]];
+    [path appendString:kUrlAddressSegment];
+    [path appendFormat:@"doctors/%@",doctorAccount];
+    [YYAPIRequest GET:path params:nil completion:^(id response, NSError *error) {
+        completion(response, error);
+    }];
+    
+}
+
+@end

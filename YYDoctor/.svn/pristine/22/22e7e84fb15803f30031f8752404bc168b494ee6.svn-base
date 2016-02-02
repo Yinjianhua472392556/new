@@ -1,0 +1,126 @@
+//
+//  LoginViewController.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/21.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "LoginController.h"
+#import "RegisterController.h"
+#import "DoctorPersonalApiTool.h"
+#import <CommonCrypto/CommonDigest.h>
+#import "HUDHelper.h"
+#import "DoctorAccount.h"
+#import "SSKeychain.h"
+#import "DoctorInformationInfo.h"
+
+@interface LoginController ()<UITextFieldDelegate>
+
+@property (weak, nonatomic) IBOutlet UIImageView *backImageView;
+@property (weak, nonatomic) IBOutlet UITextField *phoneField;
+@property (weak, nonatomic) IBOutlet UITextField *passwordField;
+@property (nonatomic, strong) loginBlock login;
+
+@end
+
+@implementation LoginController
+
+#pragma mark - IBAction
+// 注册
+- (IBAction)registerClick:(id)sender {
+    RegisterController * rvc = [self.storyboard instantiateViewControllerWithIdentifier:NSStringFromClass([RegisterController class])];
+    [self.navigationController pushViewController:rvc animated:YES];
+}
+//登录
+- (IBAction)loginClick:(id)sender {
+    if (![self vaildate]) {
+        [HUDHelper showMessage:@"用户名或者密码不能为空" toView:self.view];
+        return;
+    }
+    [HUDHelper showMessage:@"登录中..." toView:self.view];
+    NSString *password = [self md5:self.passwordField.text];
+    [DoctorPersonalApiTool loginWithDoctorName:self.phoneField.text password:password address:@"广东省广州市" success:^(id result) {
+        NSDictionary *data = result[@"data"];
+        NSInteger code = [result[@"code"] integerValue];
+        if (code == 1) {
+            //环信登录
+            [[EaseMob sharedInstance].chatManager asyncLoginWithUsername:self.phoneField.text password:password completion:^(NSDictionary *loginInfo, EMError *error) {
+                if (!error && loginInfo) {
+                    // 设置自动登录
+                    [[EaseMob sharedInstance].chatManager setIsAutoLoginEnabled:YES];
+                }
+            } onQueue:NULL];
+            NSString *service = [[NSBundle mainBundle] bundleIdentifier];
+            [SSKeychain setPassword:password forService:service account:self.phoneField.text];
+            DoctorAccount *account = [[DoctorAccount alloc] init];
+            account.access_token = data[@"accessToken"];
+            account.expires_in   = data[@"expiresIn"];
+            account.userId       = [data[@"userId"] integerValue];
+            account.userAccount  = self.phoneField.text;
+            [DoctorAccount saveCurrentAccount:account];
+            [HUDHelper showSuccess:@"登录成功"];
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"doctorInformation" object:nil];
+            [self.navigationController dismissViewControllerAnimated:YES completion:NULL];
+        }else if (code == -1||code == -2) {
+            NSString *errorString = result[@"desc"];
+            [HUDHelper showError:errorString];
+        }
+    } failure:^(NSError *error) {
+        [HUDHelper showError:@"网络错误"];
+    }];
+}
+
+- (BOOL)vaildate {
+    if ([self.phoneField.text isEqualToString:@""]||[self.passwordField.text isEqualToString:@""]) {
+        return NO;
+    }
+    return YES;
+}
+
+#pragma mark - lifeTime
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //UITextField设置placeholder字体颜色
+    UIColor *color = [UIColor whiteColor];
+    self.phoneField.attributedPlaceholder = [[NSAttributedString alloc]initWithString:@"手机号码" attributes:@{NSForegroundColorAttributeName:color}];
+    self.passwordField.attributedPlaceholder = [[NSAttributedString alloc]initWithString:@"密码" attributes:@{NSForegroundColorAttributeName:color}];
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapClick:)];
+    [self.backImageView addGestureRecognizer:tap];
+}
+
+- (void)tapClick:(UITapGestureRecognizer *)tap {
+    [self.passwordField resignFirstResponder];
+    [self.phoneField resignFirstResponder];
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField {
+    [textField resignFirstResponder];
+    return YES;
+}
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    self.navigationController.navigationBar.hidden = YES;
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+
+- (NSString *)md5:(NSString *)text {
+    const char *original_str = [text UTF8String];
+    unsigned char result[CC_MD5_DIGEST_LENGTH];
+    CC_MD5(original_str, (CC_LONG)strlen(original_str), result);
+    NSMutableString *hash = [NSMutableString string];
+    for (int i = 0; i < 16; i++)
+        [hash appendFormat:@"%02X", result[i]];
+    return [hash lowercaseString];
+}
+//登录回调login
+- (void)addAction:(loginBlock)login {
+    self.login = login;
+}
+
+@end

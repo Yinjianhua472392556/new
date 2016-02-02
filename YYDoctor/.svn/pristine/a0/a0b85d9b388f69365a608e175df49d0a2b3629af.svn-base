@@ -1,0 +1,286 @@
+//
+//  SectionManageController.m
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/22.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "SectionManageController.h"
+#import "ChooseSectionCell.h"
+#import "PatientGroup.h"
+#import "PatientHttpTool.h"
+#import "HUDHelper.h"
+#import "LoginInfo.h"
+
+@interface SectionManageController () <UITableViewDataSource, UITableViewDelegate>
+
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (weak, nonatomic) IBOutlet UIView *maskView;              //蒙板view
+@property (weak, nonatomic) IBOutlet UIView *addSectionView;        //添加分组view
+@property (weak, nonatomic) IBOutlet UIView *modifyNameView;        //重命名view
+@property (weak, nonatomic) IBOutlet UITextField *groupName;        //添加分组taxtfield
+@property (weak, nonatomic) IBOutlet UITextField *mofifyGroupName;  //重命名taxtfield
+@property (weak, nonatomic) IBOutlet UIButton *renameBtn;           //重命名按钮
+@property (weak, nonatomic) IBOutlet NSLayoutConstraint *addSectionBConstraint; //添加分组view底部约束
+@property (weak, nonatomic) IBOutlet NSLayoutConstraint *modifyNameBConstraint; //重命名view底部约束
+@property (assign, nonatomic) NSInteger cellNumber;                 //记录是那一行cell
+@property (assign, nonatomic) NSInteger defaultGroupId;             //记录系统默认分组ID
+
+@end
+
+@implementation SectionManageController
+
+//加载分组数据
+- (void)loadPatientGroupData {
+    LoginInfo *loginInfo = [LoginInfo currentLoginInfo];
+    [PatientHttpTool getPatientGroupWithUserId:[loginInfo.userId integerValue] success:^(id result) {
+        self.dataSource = [NSMutableArray arrayWithArray:result];
+        for (PatientGroup *group in self.dataSource) {
+            //遍历所有分组，找到系统默认分组，并记录分组ID
+            if ([group.groupName isEqualToString:@"默认分组"]) {
+                self.defaultGroupId = group.groupId;
+            }
+        }
+        [self.tableView reloadData];
+    } failure:^(NSError *error) {
+        
+    }];
+}
+
+//添加分组
+- (void)addNewGroup {
+    LoginInfo *loginInfo = [LoginInfo currentLoginInfo];
+    NSDictionary *params = @{@"userId":loginInfo.userId,
+                             @"groupName":self.groupName.text};
+    [PatientHttpTool addNewPatientGruopWithParams:params success:^(id result) {
+        NSInteger code = [result[@"code"] integerValue];
+        if (code == 1) {
+            //添加成功，重新刷新好友分组数据
+            [self loadPatientGroupData];
+            [HUDHelper showSuccess:@"添加成功"];
+        }else if (code == 0){
+            [HUDHelper showError:@"分组已存在,请重新添加"];
+        }else {
+            [HUDHelper showError:@"添加失败"];
+        }
+    } failure:^(NSError *error) {
+        [HUDHelper showError:@"网络错误"];
+    }];
+}
+
+//删除分组
+- (void)deleteGroup {
+    
+}
+
+//分组重命名
+- (void)renameGroupName {
+    PatientGroup *item = self.dataSource[self.cellNumber];
+    NSString *oldName = item.groupName;
+    NSString *newName = self.mofifyGroupName.text;
+    if (item.groupId == self.defaultGroupId) {
+        [HUDHelper showMessage:@"系统默认分组，无法修改"];
+    }else {
+        LoginInfo *loginInfo = [LoginInfo currentLoginInfo];
+        [PatientHttpTool modifyGroupNameWithUserId:[loginInfo.userId integerValue] groupNameOld:oldName groupNameNew:newName success:^(id result) {
+            NSInteger code = [result[@"code"] integerValue];
+            if (code == 1) {
+                [self hideView];
+                [self loadPatientGroupData];
+                [HUDHelper showSuccess:@"重命名成功"];
+            }else if (code == 0){
+                [HUDHelper showError:@"分组已存在，请重新命名"];
+            }else {
+                [HUDHelper showError:@"重命名失败"];
+            }
+        } failure:^(NSError *error) {
+            [HUDHelper showError:@"网络错误"];
+        }];
+    }
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [self.tableView setEditing:YES animated:YES];
+    //添加点击手势
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(hideView)];
+    [self.maskView addGestureRecognizer:tap];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [self hideView];
+    [self loadPatientGroupData];
+    //注册监听键盘通知
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
+}
+
+//键盘弹出，获取键盘高度
+- (void)keyboardWillShow:(NSNotification *)aNotification {
+    NSDictionary *info = [aNotification userInfo];
+    NSValue *value = [info objectForKey:UIKeyboardFrameEndUserInfoKey];
+    CGRect kbRect = [value CGRectValue];
+    CGFloat height = kbRect.size.height;
+    if (self.addSectionView.hidden == NO) {
+        if (self.addSectionBConstraint.constant < height) {
+            [UIView animateWithDuration:1.0 animations:^{
+                self.addSectionBConstraint.constant = height+20;
+            }];
+        }
+    }
+    if (self.modifyNameView.hidden == NO) {
+        if (self.modifyNameBConstraint.constant < height) {
+            [UIView animateWithDuration:1.0 animations:^{
+                self.modifyNameBConstraint.constant = height+20;
+            }];
+        }
+    }
+}
+
+//键盘收回
+- (void)keyboardWillHide:(NSNotification *)aNotification {
+    [UIView animateWithDuration:1.0 animations:^{
+        self.addSectionBConstraint.constant = (HYScreenH - CGRectGetHeight(self.addSectionView.frame)) / 2;
+        self.modifyNameBConstraint.constant = (HYScreenH - CGRectGetHeight(self.modifyNameView.frame)) / 2;
+    }];
+}
+
+- (void)hideView {
+    self.maskView.hidden = YES;
+    self.addSectionView.hidden = YES;
+    self.modifyNameView.hidden = YES;
+    [self.view endEditing:YES];
+}
+
+//添加分组按钮点击事件
+- (IBAction)addSectionClick:(UIButton *)sender {
+    self.maskView.hidden = NO;
+    self.addSectionView.hidden = NO;
+}
+
+- (void)renameClick:(UIButton *)sender {
+    self.cellNumber = sender.tag;
+    self.maskView.hidden = NO;
+    self.modifyNameView.hidden = NO;
+}
+
+//添加分组确定取消按钮点击事件
+- (IBAction)addGroupClick:(UIButton *)sender {
+    if (sender.tag == 0) {
+        [self hideView];
+    }else if(sender.tag == 1){
+        [self addNewGroup];
+        [self hideView];
+    }
+}
+
+//分组重命名确定取消按钮点击事件
+- (IBAction)modifyGroupNameClick:(UIButton *)sender {
+    if (sender.tag == 3) {
+        [self hideView];
+    }else if(sender.tag == 4){
+        [self renameGroupName];
+    }
+}
+
+//点击完成按钮，返回上级菜单
+- (IBAction)finishBarClick:(UIBarButtonItem *)sender {
+    [self.navigationController popViewControllerAnimated:YES];
+}
+
+#pragma mark -- UITableView DataSource 
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.dataSource.count;
+}
+
+#pragma mark -- UITableView Delegate 
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    static NSString *identifier = @"ChooseSectionCell";
+    ChooseSectionCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
+    
+    PatientGroup *item = self.dataSource[indexPath.row];
+    cell.title.text = item.groupName;
+    //在分组名上添加一个透明按钮,点击对分组重命名
+    UIButton *renameBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    renameBtn.frame = CGRectMake(20, 6, HYScreenW-20-20, 30);
+    renameBtn.tag = indexPath.row;
+    [renameBtn setBackgroundColor:[UIColor clearColor]];
+    [renameBtn addTarget:self action:@selector(renameClick:) forControlEvents:UIControlEventTouchUpInside];
+    [cell.contentView addSubview:renameBtn];
+    cell.showsReorderControl = YES;
+    return cell;
+}
+
+//- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+//    self.cellNumber = indexPath.row;
+//    self.maskView.hidden = NO;
+//    self.modifyNameView.hidden = NO;
+//}
+
+- (BOOL)tableView:(UITableView *)tableView shouldIndentWhileEditingRowAtIndexPath:(NSIndexPath *)indexPath {
+    return NO;
+}
+
+- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
+    return YES;
+}
+
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    return YES;
+}
+
+- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return UITableViewCellEditingStyleDelete;
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForDeleteConfirmationButtonForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return @"删除";
+}
+
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+    PatientGroup *item = self.dataSource[indexPath.row];
+    NSInteger gruopId  = item.groupId;
+    if (gruopId == self.defaultGroupId) {
+        [HUDHelper showMessage:@"系统默认分组，无法删除"];
+    }else {
+        [PatientHttpTool deletePatientGroupWithGroupId:gruopId defaultGroupId:self.defaultGroupId success:^(id result) {
+            NSInteger code = [result[@"code"] integerValue];
+            if (code == 1) {
+                [self loadPatientGroupData];
+                [HUDHelper showSuccess:@"成功删除分组"];
+            }else {
+                [HUDHelper showError:@"删除分组失败"];
+            }
+        } failure:^(NSError *error) {
+            [HUDHelper showError:@"网络错误"];
+        }];
+
+    }
+}
+
+//移动cell时的操作
+- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)sourceIndexPath toIndexPath:(NSIndexPath *)destinationIndexPath {
+    if (sourceIndexPath != destinationIndexPath) {
+        id object = [self.dataSource objectAtIndex:sourceIndexPath.row];
+        [self.dataSource removeObjectAtIndex:sourceIndexPath.row];
+        if (destinationIndexPath.row > [self.dataSource count]) {
+            [self.dataSource addObject:object];
+        }
+        else {
+            [self.dataSource insertObject:object atIndex:destinationIndexPath.row];
+        }
+        
+    }
+}
+
+- (NSIndexPath *)tableView:(UITableView *)tableView targetIndexPathForMoveFromRowAtIndexPath:(NSIndexPath *)sourceIndexPath toProposedIndexPath:(NSIndexPath *)proposedDestinationIndexPath {
+    return proposedDestinationIndexPath;
+}
+
+
+@end

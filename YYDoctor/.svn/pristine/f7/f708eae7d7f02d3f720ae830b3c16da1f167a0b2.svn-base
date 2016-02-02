@@ -1,0 +1,25 @@
+//
+//  PatientList.h
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/21.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface PatientList : NSObject
+
+@property (copy, nonatomic) NSString *icon;  /*<头像 */
+
+@property (copy, nonatomic) NSString *name;  /*<姓名 */
+
+@property (copy, nonatomic) NSString *remark; /*<备注 */
+
+@property (copy, nonatomic) NSString *gender; /*<性别 */
+
+@property (copy, nonatomic) NSString *age;    /*<年龄 */
+
+- (instancetype)initWithDictionary:(NSDictionary *)dictionary;
+
+@end

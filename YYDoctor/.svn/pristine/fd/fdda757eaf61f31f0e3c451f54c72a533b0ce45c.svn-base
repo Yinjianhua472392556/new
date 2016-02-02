@@ -1,0 +1,23 @@
+//
+//  YYAPIRequest.h
+//  YYDoctor
+//
+//  Created by apple on 15/10/27.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface YYAPIRequest : NSObject
+
++ (void)GET:(NSString *)path
+ parameters:(NSDictionary *)parameters
+    success:(void(^)(NSArray *response))success
+    failure:(void(^)(NSError *error))failure;
+
++ (void)POST:(NSString *)path
+  parameters:(NSDictionary *)parameters
+     success:(void(^)(NSDictionary *response))success
+     failure:(void(^)(NSError *error))failure;
+
+@end

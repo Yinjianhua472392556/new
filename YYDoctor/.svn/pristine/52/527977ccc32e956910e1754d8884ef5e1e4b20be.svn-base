@@ -1,0 +1,140 @@
+//
+//  PersonalCenterViewController.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/21.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "PersonalCenterController.h"
+#import "ConsultationBillController.h"
+#import "OpenServiceController.h"
+#import "PersonalInformationController.h"
+#import "LoginController.h"
+#import "DoctorPersonalApiTool.h"
+#import "SSKeychain.h"
+#import "HUDHelper.h"
+#import "PersonalAPIHelper.h"
+#import "SettingsController.h"
+#import "LoginInfo.h"
+#import "UIColor+HEX.h"
+
+@interface PersonalCenterController ()
+<UITableViewDelegate,UITableViewDataSource>
+
+@property (nonatomic, strong) NSArray *dataSource;
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (weak, nonatomic) IBOutlet UILabel *doctorNameLabel;//医生名字
+@property (weak, nonatomic) IBOutlet UILabel *doctorPositionLabel;//医生职称
+@property (weak, nonatomic) IBOutlet UIImageView *onlineStateImageView;
+@property (weak, nonatomic) IBOutlet UIButton *doctorAvatarButton;//医生头像
+
+- (IBAction)onLogoutClick:(id)sender;
+- (IBAction)onPersonalClick:(id)sender;
+
+@end
+
+@implementation PersonalCenterController
+
+#pragma mark - UITableView Delegation
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.dataSource.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath  {
+    static NSString *reuseIdentifier = @"PersonalCenterCell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
+    if (!cell) {
+        cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier];
+    }
+    NSDictionary *item = self.dataSource[indexPath.row];
+    cell.textLabel.text = item[@"title"];
+    cell.textLabel.textColor = [UIColor colorWithHEX:0x666666 alpha:1];
+    cell.imageView.image = [UIImage imageNamed:item[@"image"]];
+    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    return cell;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSDictionary *item = self.dataSource[indexPath.row];
+    NSString *className = item[@"className"];
+    UIViewController *vc = [self.storyboard instantiateViewControllerWithIdentifier:className];
+    [self.navigationController pushViewController:vc animated:YES];
+}
+
+- (void)showLoginController {
+    LoginController *lc = [self.storyboard instantiateViewControllerWithIdentifier:@"LoginController"];
+    UINavigationController *nvc = [[UINavigationController alloc] initWithRootViewController:lc];
+    [self.navigationController presentViewController:nvc animated:YES completion:NULL];
+}
+
+#pragma mark - IBActions
+
+- (IBAction)onLogoutClick:(id)sender {
+    LoginInfo *loginInfo = [LoginInfo currentLoginInfo];
+    [PersonalAPIHelper logoutWithAccessToken:loginInfo.accessToken userId:loginInfo.userId completion:^(id response, NSError *error) {
+        NSDictionary *result = response[@"Result"];
+        NSInteger code = [result[@"code"] integerValue];
+        if (code == 1) {
+            NSString *service = [[NSBundle mainBundle] bundleIdentifier];
+            [SSKeychain deletePasswordForService:service account:loginInfo.account];
+            [LoginInfo deleteLoginInfo];
+            [self showLoginController];
+            //注销环信
+            EMError *error = nil;
+            NSDictionary *info = [[EaseMob sharedInstance].chatManager logoffWithUnbindDeviceToken:YES error:&error];
+            if (!error && info) {
+                NSLog(@"环信注销成功");
+            }else {
+                NSLog(@"环信注销失败");
+            }
+        }else {
+            [HUDHelper showError:@"注销失败,请重试"];
+            NSLog(@"注销失败:%@",result);
+        }
+    }];
+}
+
+- (IBAction)onPersonalClick:(id)sender {
+    PersonalInformationController *plc = [self.storyboard instantiateViewControllerWithIdentifier:@"PersonalInformationController"];
+    [self.navigationController pushViewController:plc animated:YES];
+}
+
+#pragma mark - Lifetime
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    LoginInfo *loginInfo = [LoginInfo currentLoginInfo];
+    NSUserDefaults *accountDefaults = [NSUserDefaults standardUserDefaults];
+    [accountDefaults setObject:loginInfo.doctorInfo.account forKey:@"account"];
+    [accountDefaults synchronize];
+    if (loginInfo) {
+        self.doctorNameLabel.text = loginInfo.doctorInfo.name;
+        self.doctorPositionLabel.text = loginInfo.doctorInfo.position;
+        NSInteger onlineState = [loginInfo.onlineState integerValue];
+        NSString *imageName = onlineState==1?@"PersonalOnlineState":@"PersonalOfflineState";
+        self.onlineStateImageView.image = [UIImage imageNamed:imageName];
+    }else {
+        [self showLoginController];
+    }
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.tableView.tableFooterView = [UIView new];
+    self.dataSource = @[
+            @{@"title":@"消息中心",@"image":@"MessageCenterImage",@"className":@"MessageCenterController"},
+            @{@"title":@"咨询账单",@"image":@"ConsultationBillImage",@"className":@"ConsultationBillController"},
+            @{@"title":@"开通服务",@"image":@"OpenServiceImage",@"className":@"OpenServiceController"},
+            @{@"title":@"设置",@"image":@"SettingImage",@"className":@"SettingsController"}];
+    [self.tableView reloadData];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+
+@end

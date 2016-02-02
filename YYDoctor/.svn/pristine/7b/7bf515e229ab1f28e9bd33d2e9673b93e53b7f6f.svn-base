@@ -1,0 +1,218 @@
+//
+//  MessageCenterViewController.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/22.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "MessageCenterController.h"
+#import <DZNEmptyDataSet/UIScrollView+EmptyDataSet.h>
+#import "MessageCell.h"
+#import "MessageInfo.h"
+#import "YYAPIRequest.h"
+#import "PersonalApiTool.h"
+#import "RegistrationRecordInfo.h"
+
+@interface MessageCenterController ()
+<UITableViewDataSource,
+UITableViewDelegate,
+DZNEmptyDataSetSource,
+DZNEmptyDataSetDelegate>
+
+@property (weak, nonatomic) IBOutlet UIView *popView;//右上角弹出view
+@property (weak, nonatomic) IBOutlet UIView *maskView;//覆盖view
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (weak, nonatomic) IBOutlet UIView *bookinginformationPopView;//显示挂号信息view
+@property (nonatomic, strong) NSMutableArray *dataSource;//
+@property (nonatomic, strong) NSArray *listDataSource;
+@property (nonatomic, strong) NSMutableArray *registrationRecordDataSource;//挂号记录数组
+@property (nonatomic, strong) NSMutableArray *addTipsArray;//加号提示和记录数组
+@property (nonatomic, assign) BOOL popViewSelected;
+
+@end
+
+@implementation MessageCenterController
+
+#pragma mark - IBAction
+
+- (IBAction)bookingTpyeClick:(UIButton *)sender {
+    NSInteger tag = sender.tag;
+    switch (tag) {
+        case 101:
+            [self.dataSource removeAllObjects];
+            [self allMessageRequset];
+            break;
+        case 102:
+            [self.dataSource removeAllObjects];
+            [self addTipsRequest];
+            break;
+        case 103:
+            [self.dataSource removeAllObjects];
+            [self plusRecordRequest];
+            break;
+        case 104:
+//            [self.dataSource removeAllObjects];
+//            [self registrationRecordRequest];
+            break;
+    }
+    [self.tableView reloadData];
+    self.popView.hidden = YES;
+    self.maskView.hidden = YES;
+    self.popViewSelected = NO;
+}
+
+- (IBAction)bookingType:(id)sender {
+    if (self.popViewSelected == NO) {
+        self.popView.hidden  = NO;
+        self.maskView.hidden = NO;
+        self.popViewSelected = YES;
+    }else {
+        self.popView.hidden  = YES;
+        self.maskView.hidden = YES;
+        self.popViewSelected = NO;
+    }
+}
+
+#pragma mark - Lifetime
+
+//视图即将出现时先隐藏弹出视图
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    self.popView.hidden = YES;
+    self.maskView.hidden = YES;
+    self.bookinginformationPopView.hidden = YES;
+    self.popViewSelected = NO;
+    [self allMessageRequset];
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // 单击手势
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(hide:)];
+    [self.maskView addGestureRecognizer:tap];
+}
+
+//点击view隐藏弹出视图
+- (void)hide:(UITapGestureRecognizer *)tapgesture {
+    self.maskView.hidden = YES;
+    self.popView.hidden  = YES;
+    self.bookinginformationPopView.hidden = YES;
+    self.popViewSelected = NO;
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+
+#pragma mark - request
+//获取消息中心全部记录数据请求
+- (void)allMessageRequset {
+    NSString *path = @"seq/doc/268365";
+    [YYAPIRequest GET:path parameters:nil success:^(NSArray *response) {
+        if (!self.dataSource) {
+            self.dataSource = [NSMutableArray array];
+        }
+        [response enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            MessageInfo *info = [[MessageInfo alloc] initWithDictionary:obj];
+            [self.dataSource addObject:info];
+        }];
+        [self.tableView reloadData];
+    } failure:^(NSError *error) {
+        
+    }];
+}
+//加号记录数据请求
+- (void)plusRecordRequest {
+//    NSString *path = @"seq/state/123/4";
+//    [YYAPIRequest GET:path parameters:nil success:^(NSArray *response) {
+//        if (!self.addTipsArray) {
+//            self.addTipsArray = [NSMutableArray array];
+//        }
+//        [response enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+//            MessageModel *info = [[MessageModel alloc] initWithDictionary:obj];
+//            [self.dataSource addObject:info];
+//        }];
+//        [self.tableView reloadData];
+//    } failure:^(NSError *error) {
+//        
+//    }];
+        [PersonalApiTool addTipsWithDoctorId:123 success:^(id result) {
+            self.dataSource = [NSMutableArray arrayWithArray:result];
+            [self.tableView reloadData];
+        } failure:^(NSError *error) {
+    
+        }];
+}
+
+//挂号记录数据请求
+- (void)registrationRecordRequest {
+    [PersonalApiTool getRegistrationRecordWithDoctorId:244474 success:^(id result) {
+        self.dataSource = [NSMutableArray arrayWithArray:result];
+        [self.tableView reloadData];
+    } failure:^(NSError *error) {
+        
+    }];
+}
+//加号提示数据请求
+- (void)addTipsRequest {
+    [PersonalApiTool addTipsWithDoctorId:123 success:^(id result) {
+        self.dataSource = [NSMutableArray arrayWithArray:result];
+        [self.tableView reloadData];
+    } failure:^(NSError *error) {
+        
+    }];
+}
+
+#pragma mark - EmptyDataDelegate
+
+- (UIImage *)imageForEmptyDataSet:(UIScrollView *)scrollView {
+    UIImage *image = [UIImage imageNamed:@"EmptyDataSet"];
+    return image;
+}
+
+- (NSAttributedString *)titleForEmptyDataSet:(UIScrollView *)scrollView {
+    NSDictionary *attribute = @{NSFontAttributeName:[UIFont systemFontOfSize:18.0],NSForegroundColorAttributeName:[UIColor blackColor]};
+    NSAttributedString *string = [[NSAttributedString alloc]initWithString:@"暂无内容" attributes:attribute];
+    return string;
+}
+
+#pragma mark - tableViewDelegate
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.dataSource.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+        static NSString *messageCell = @"MessageCell";
+        MessageCell *cell = [tableView dequeueReusableCellWithIdentifier:messageCell];
+        [self configCell:cell indexPath:indexPath];
+        return cell;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+        self.bookinginformationPopView.hidden = NO;
+        self.maskView.hidden = NO;
+        self.popView.hidden = YES;
+        self.popViewSelected = NO;
+}
+
+- (void)configRegistrationRecordCell:(UITableViewCell *)cell indexPath:(NSIndexPath *)indexPath {
+    
+}
+
+- (void)configCell:(UITableViewCell *)cell indexPath:(NSIndexPath *)indexPath {
+    MessageInfo *model = self.dataSource[indexPath.row];
+    MessageCell *messageCell = (MessageCell *)cell;
+    messageCell.userNameLabel.text = model.userName;
+    messageCell.timeLabel.text = model.time;
+    if (model.shiftType == 1) {
+        messageCell.bookingTypeLabel.text = @"挂号";
+    }else if (model.shiftType == 2) {
+        messageCell.bookingTypeLabel.text = @"加号";
+    }
+}
+
+
+
+@end

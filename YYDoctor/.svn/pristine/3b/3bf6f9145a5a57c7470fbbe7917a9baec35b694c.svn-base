@@ -1,0 +1,19 @@
+//
+//  SettingInfo.h
+//  YYDoctor
+//
+//  Created by apple on 15/10/28.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface SettingInfo : NSObject
+
+@property (nonatomic, assign) NSInteger docId;//医生id
+@property (nonatomic, copy) NSString *beginTime;//开始时间
+@property (nonatomic, copy) NSString *endTime;//结束时间
+
+- (instancetype)initWithDictionary:(NSDictionary *)dictionary;
+
+@end

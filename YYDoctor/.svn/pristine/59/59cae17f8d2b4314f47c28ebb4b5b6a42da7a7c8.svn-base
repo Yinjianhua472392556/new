@@ -1,0 +1,146 @@
+//
+//  SetUpViewController.m
+//  YYDoctor
+//
+//  Created by apple on 15/10/23.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "SettingController.h"
+#import "YYAPIRequest.h"
+#import "SettingInfo.h"
+
+@interface SettingController ()
+<UITableViewDelegate,UITableViewDataSource>
+
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
+@property (weak, nonatomic) IBOutlet UIButton *timeEditButton;
+@property (nonatomic, strong) NSMutableArray *dataArray;
+@property (nonatomic, strong) NSMutableDictionary *openseverceDictionary;
+
+@end
+
+@implementation SettingController
+
+#pragma mark - IBAction
+
+// 保存医生咨询时间设置信息
+- (IBAction)timeEditing:(id)sender {
+    
+}
+// 保存医生提醒设置信息
+- (IBAction)openAlertSevrece:(UISwitch *)sender {
+    switch (sender.tag) {
+        case 0:
+            [self.openseverceDictionary setObject:@"0" forKey:@"addAlert"];
+            break;
+        case 1:
+            [self.openseverceDictionary setObject:@"0" forKey:@"regAlert"];
+            break;
+        case 2:
+            [self.openseverceDictionary setObject:@"0" forKey:@"preAppoAlert"];
+            break;
+    }
+    [self openSevreceRequest];
+}
+
+#pragma mark - Request
+// 医生提醒数据请求
+- (void)openSevreceRequest {
+    NSString *path = @"alertSet/";
+    [YYAPIRequest POST:path parameters:self.openseverceDictionary success:^(NSDictionary *response) {
+        
+    } failure:^(NSError *error) {
+        
+    }];
+}
+//	获取医生咨询时间设置信息数据请求
+- (void)getDoctorTimeRequest {
+    NSString *requestPath = @"timeSlot/select";
+    [YYAPIRequest GET:requestPath parameters:@{@"docId":@122561} success:^(NSArray *response) {
+        [response enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+            SettingInfo *info = [[SettingInfo alloc] initWithDictionary:obj];
+            [self.dataArray  addObject:info];
+            [self.tableView reloadData];
+        }];
+    }
+    failure:^(NSError *error) {
+        NSLog(@"error==%@",error);
+    }];
+}
+
+//	保存医生咨询时间设置信息数据请求
+
+- (void)saveDoctorTimeRequest {
+    NSString *path = @"timeSlot/set";
+    SettingInfo *info = [[SettingInfo alloc] init];
+    NSDictionary *params = @{@"docId":@122561,
+                             @"bTime":info.beginTime,
+                             @"eTime":info.endTime};
+    
+    [YYAPIRequest POST:path parameters:params success:^(NSDictionary *response) {
+        
+    } failure:^(NSError *error) {
+        NSLog(@"error==%@",error);
+    }];
+}
+
+#pragma mark - tableViewDelegate
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.dataArray.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    static NSString *cellID = @"cellID";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellID];
+    if (!cell) {
+        cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellID];
+    }
+    SettingInfo *info = self.dataArray[indexPath.row];
+    cell.textLabel.text = [NSString stringWithFormat:@"%@--%@",info.beginTime,info.endTime];
+    tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    return cell;
+}
+
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    return YES;
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForDeleteConfirmationButtonForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return @"删除";
+}
+
+- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return UITableViewCellEditingStyleDelete;
+}
+
+//- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+//    if (editingStyle == UITableViewCellEditingStyleDelete ) {
+//        [self.dataArray removeObjectAtIndex:indexPath.row];
+//        [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObjects:indexPath, nil] withRowAnimation:UITableViewRowAnimationTop];
+//    }
+//}
+
+#pragma mark - lifetime
+
+- (void)viewWillAppear:(BOOL)animated {
+    [self getDoctorTimeRequest];
+    
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.openseverceDictionary = [@{@"docId":@243681,
+                                 @"addAlert":@1,
+                                 @"regAlert":@1,
+                             @"preAppoAlert":@1}mutableCopy];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    
+}
+
+
+@end

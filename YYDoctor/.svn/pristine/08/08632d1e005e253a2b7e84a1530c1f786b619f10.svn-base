@@ -1,0 +1,27 @@
+//
+//  PatientManageController.m
+//  YYDoctor
+//
+//  Created by QiuQuan Wu on 15/10/20.
+//  Copyright © 2015年 Guangdong ZSGR Technologies Co., Ltd. All rights reserved.
+//
+
+#import "PatientManageController.h"
+
+@interface PatientManageController ()
+
+@end
+
+@implementation PatientManageController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+}
+
+- (IBAction)moreClick:(UIBarButtonItem *)sender {
+    
+}
+
+
+@end
